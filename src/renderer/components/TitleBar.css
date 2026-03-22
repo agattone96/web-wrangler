@@ -1,0 +1,96 @@
+/* TitleBar.css */
+.app-titlebar {
+  height: var(--topbar-height);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 0 80px; /* Mac traffic light spacing */
+  z-index: 100;
+  flex-shrink: 0;
+  backdrop-filter: var(--glass-blur);
+}
+
+.titlebar-left {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.titlebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-icon {
+  width: 24px;
+  height: 24px;
+  background: var(--color-neon-pink);
+  color: #fff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: var(--glow-pink-sm);
+}
+.logo-text {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: 0.02em;
+}
+
+.titlebar-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+/* ── Search ── */
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+}
+.search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--color-text-dim);
+  pointer-events: none;
+}
+.search-input {
+  padding-left: 32px;
+  padding-right: 28px;
+  background: var(--color-surface-2);
+  height: 32px;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+.search-clear {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--color-text-dim);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.titlebar-actions {
+  display: flex;
+  gap: 8px;
+  width: var(--sidebar-width);
+  justify-content: flex-end;
+}

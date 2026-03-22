@@ -1,0 +1,156 @@
+/* AppCard.css */
+
+.app-card {
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-base);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface-2);
+  border: var(--glass-border);
+  backdrop-filter: var(--glass-blur);
+}
+.app-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  border-color: var(--color-border-vivid);
+  box-shadow: var(--glow-deep), 0 20px 40px rgba(0,0,0,0.5);
+}
+.app-card.selected {
+  border-color: var(--color-neon-pink);
+  box-shadow: var(--glow-pink-sm), 0 0 0 1px rgba(255,0,127,0.3);
+}
+.app-card.open::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-neon-pink), var(--color-neon-purple));
+  box-shadow: 0 0 12px var(--color-neon-pink);
+  z-index: 5;
+}
+
+/* ── Open dot ── */
+.app-card-open-dot {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-neon-pink);
+  box-shadow: 0 0 10px var(--color-neon-pink), 0 0 20px rgba(255,0,127,0.5);
+  animation: pulse-glow 2s ease infinite;
+  z-index: 10;
+}
+
+/* ── Body ── */
+.app-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 16px 16px;
+}
+
+/* ── Icon ── */
+.app-card-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+.app-card:hover .app-card-icon {
+  border-color: var(--color-neon-pink);
+  box-shadow: var(--glow-pink-sm), 0 12px 24px rgba(0,0,0,0.3);
+  transform: scale(1.1) rotate(2deg);
+}
+.app-card-icon img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+}
+.app-card-icon-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--color-neon-pink), var(--color-neon-purple));
+  color: #fff;
+  text-shadow: 0 0 12px rgba(255,0,127,0.6);
+}
+
+/* ── Info ── */
+.app-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+  min-width: 0;
+  width: 100%;
+}
+.app-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  display: block;
+}
+.app-card-domain {
+  font-size: 11px;
+  display: block;
+}
+
+/* ── Actions overlay ── */
+.app-card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 14px;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: all var(--transition-base);
+}
+.app-card:hover .app-card-actions {
+  opacity: 1;
+  transform: translateY(0);
+}
+.app-card-launch { width: 100%; justify-content: center; }
+
+.app-card-action-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.btn-danger-icon:hover {
+  background: rgba(200, 0, 60, 0.15) !important;
+  color: #ff4070 !important;
+  border-color: rgba(200,0,60,0.3) !important;
+}
+
+/* ── Spinner ── */
+.spinner {
+  width: 11px;
+  height: 11px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}

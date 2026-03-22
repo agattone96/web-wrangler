@@ -1,0 +1,95 @@
+/* CatalogBrowser.css */
+.catalog-modal {
+  width: min(700px, calc(100vw - 48px));
+  max-height: calc(100vh - 80px);
+}
+
+.catalog-toolbar {
+  padding: 12px 24px 0;
+  display: flex;
+  gap: 10px;
+}
+.catalog-categories {
+  padding: 10px 24px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.cat-pill {
+  padding: 4px 12px;
+  border-radius: 99px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.cat-pill:hover { border-color: rgba(255,0,127,0.4); color: var(--color-text); }
+.cat-pill.active {
+  background: rgba(255,0,127,0.15);
+  border-color: var(--color-neon-pink);
+  color: var(--color-neon-pink);
+  box-shadow: 0 0 8px rgba(255,0,127,0.2);
+}
+
+.catalog-grid-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 24px 20px;
+}
+.catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.catalog-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+}
+.catalog-card.catalog-installed {
+  opacity: 0.6;
+  border-color: rgba(138,112,214,0.3);
+}
+.catalog-card-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.catalog-card-icon img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.catalog-fallback {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-neon-pink);
+}
+.catalog-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.catalog-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.catalog-card-cat { font-size: 10px; width: fit-content; }
+.catalog-install-btn { flex-shrink: 0; }

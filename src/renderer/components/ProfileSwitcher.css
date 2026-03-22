@@ -1,0 +1,42 @@
+/* ProfileSwitcher.css */
+.profile-switcher-modal { max-width: 400px; }
+
+.profile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.profile-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: border-color var(--transition-fast);
+}
+.profile-row:hover { border-color: rgba(255,0,127,0.3); }
+.profile-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.profile-name { flex: 1; font-size: 14px; font-weight: 500; }
+
+.new-profile-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.color-picker {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  background: var(--color-surface-2);
+  cursor: pointer;
+  flex-shrink: 0;
+}
