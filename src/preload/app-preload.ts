@@ -1,5 +1,14 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
+declare global {
+  interface Window {
+    DarkReader?: {
+      enable: (options: { brightness: number; contrast: number; sepia: number }) => void
+      disable: () => void
+    }
+  }
+}
+
 // This preload is injected into GUEST web pages (e.g. Gmail, Notion).
 // It handles:
 // 1. Receiving and applying custom CSS/JS.
@@ -22,9 +31,13 @@ contextBridge.exposeInMainWorld('__WEB_WRANGLER__', {
 
 // Listen for DarkReader initialization from main process
 ipcRenderer.on('dark-mode-init', (_e, { brightness, contrast, sepia }) => {
-  // We assume DarkReader is already injected as a global script by the main process
-  // because bundling it here would be too large for every window.
-  if ((window as any).DarkReader) {
-    (window as any).DarkReader.enable({ brightness, contrast, sepia })
+  if (window.DarkReader) {
+    window.DarkReader.enable({ brightness, contrast, sepia })
+  }
+})
+
+ipcRenderer.on('dark-mode-disable', () => {
+  if (window.DarkReader) {
+    window.DarkReader.disable()
   }
 })

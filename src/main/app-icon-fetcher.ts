@@ -8,21 +8,25 @@ export async function fetchFavicon(url: string, appId: string): Promise<string |
   try {
     const origin = new URL(url).origin
     const iconDir = path.join(app.getPath('userData'), 'icons')
-    fs.mkdirSync(iconDir, { recursive: true })
+    if (!fs.existsSync(iconDir)) {
+      fs.mkdirSync(iconDir, { recursive: true })
+    }
     const destPath = path.join(iconDir, `${appId}.png`)
 
-    // Try Google's favicon service first (reliable, always returns something)
-    const googleFaviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(origin)}&sz=64`
+    // We try Google's service first as it's very reliable
+    // sz=128 for higher quality if available
+    const googleFaviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(origin)}&sz=128`
     const downloaded = await downloadToFile(googleFaviconUrl, destPath)
     if (downloaded) return destPath
 
-    // Fallback: try /favicon.ico directly
+    // Fallback: direct favicon.ico
     const directUrl = `${origin}/favicon.ico`
-    const downloaded2 = await downloadToFile(directUrl, destPath)
-    if (downloaded2) return destPath
+    const downloadedDirect = await downloadToFile(directUrl, destPath)
+    if (downloadedDirect) return destPath
 
     return null
-  } catch {
+  } catch (err) {
+    console.error(`[fetchFavicon] Error for ${url}:`, err)
     return null
   }
 }

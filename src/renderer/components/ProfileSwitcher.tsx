@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../store'
+import type { CreateProfileInput } from '@shared/types'
 import './ProfileSwitcher.css'
 
 interface Props {
@@ -30,7 +31,8 @@ export default function ProfileSwitcher({ appId, onClose }: Props) {
     if (!newName.trim()) return
     setAdding(true)
     try {
-      const profile = await window.api.createProfile({ appId, name: newName.trim(), color: newColor })
+      const profileInput: CreateProfileInput = { appId, name: newName.trim(), color: newColor }
+      const profile = await window.api.createProfile(profileInput)
       addProfile(profile)
       setNewName('')
     } finally { setAdding(false) }

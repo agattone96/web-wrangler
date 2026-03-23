@@ -6,18 +6,13 @@ import './AppGrid.css'
 
 export default function AppGrid() {
   const {
-    apps, spaces, activeSpaceId,
-    setShowAddApp, setShowCatalog, setSettingsTargetApp,
-    searchQuery, setSearchQuery,
+    apps, activeSpaceId,
+    setShowAddApp, setSettingsTargetApp,
+    searchQuery,
     selectedAppId, setSelectedApp,
   } = useStore()
 
   const [profileSwitcherAppId, setProfileSwitcherAppId] = useState<string | null>(null)
-
-  const activeSpaceName = useMemo(() => {
-    if (!activeSpaceId) return 'All Apps'
-    return spaces.find((s) => s.id === activeSpaceId)?.name ?? 'Apps'
-  }, [activeSpaceId, spaces])
 
   const filtered = useMemo(() => {
     let result = activeSpaceId

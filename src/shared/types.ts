@@ -9,6 +9,12 @@ export interface App {
   createdAt: number
 }
 
+export interface InstallAppInput {
+  name: string
+  url: string
+  spaceId?: string
+}
+
 export interface Profile {
   id: string
   appId: string
@@ -17,12 +23,24 @@ export interface Profile {
   createdAt: number
 }
 
+export interface CreateProfileInput {
+  appId: string
+  name: string
+  color: string
+}
+
 export interface Space {
   id: string
   name: string
   color: string
   icon: string
   sortOrder: number
+}
+
+export interface CreateSpaceInput {
+  name: string
+  color: string
+  icon: string
 }
 
 export interface AppSettings {
@@ -47,11 +65,40 @@ export interface CatalogApp {
   description: string
 }
 
+export interface CatalogQuery {
+  search?: string
+  category?: string
+}
+
 export type WindowState = {
   x?: number
   y?: number
   width: number
   height: number
+}
+
+export interface PreloadApi {
+  listApps: () => Promise<App[]>
+  installApp: (data: InstallAppInput) => Promise<App>
+  removeApp: (id: string) => Promise<void>
+  updateApp: (id: string, data: Partial<Pick<App, 'name' | 'url' | 'iconPath' | 'spaceId'>>) => Promise<void>
+  openApp: (appId: string, profileId: string) => Promise<void>
+  fetchIcon: (url: string, appId: string) => Promise<string | null>
+  listProfiles: (appId: string) => Promise<Profile[]>
+  createProfile: (data: CreateProfileInput) => Promise<Profile>
+  updateProfile: (id: string, data: Partial<Pick<Profile, 'name' | 'color'>>) => Promise<void>
+  deleteProfile: (id: string) => Promise<void>
+  listSpaces: () => Promise<Space[]>
+  createSpace: (data: CreateSpaceInput) => Promise<Space>
+  updateSpace: (id: string, data: Partial<Omit<Space, 'id'>>) => Promise<void>
+  deleteSpace: (id: string) => Promise<void>
+  getAppSettings: (appId: string) => Promise<AppSettings>
+  updateAppSettings: (appId: string, data: Partial<Omit<AppSettings, 'appId'>>) => Promise<void>
+  getGlobalSettings: () => Promise<GlobalSettings>
+  updateGlobalSettings: (data: Partial<GlobalSettings>) => Promise<void>
+  listCatalog: (query?: CatalogQuery) => Promise<CatalogApp[]>
+  onAppOpened: (cb: (appId: string) => void) => () => void
+  onAppClosed: (cb: (appId: string) => void) => () => void
 }
 
 // IPC channel names

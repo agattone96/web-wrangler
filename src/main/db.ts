@@ -1,15 +1,67 @@
 import Database from 'better-sqlite3'
 import path from 'path'
 import { app } from 'electron'
-import fs from 'fs'
-import type { App, Profile, Space, AppSettings, CatalogApp, GlobalSettings } from '../shared/types'
+import type { App, Profile, Space, AppSettings, CatalogApp, GlobalSettings, WindowState } from '../shared/types'
 import { DEFAULT_GLOBAL_SETTINGS } from '../shared/types'
 
 let db: Database.Database
 
-export function getDb(): Database.Database {
-  return db
+type AppRow = {
+  id: string
+  name: string
+  url: string
+  icon_path: string | null
+  space_id: string | null
+  created_at: number
 }
+
+type ProfileRow = {
+  id: string
+  app_id: string
+  name: string
+  color: string
+  created_at: number
+}
+
+type SpaceRow = {
+  id: string
+  name: string
+  color: string
+  icon: string
+  sort_order: number
+}
+
+type AppSettingsRow = {
+  app_id: string
+  zoom_level: number
+  dark_mode: number
+  block_ads: number
+  custom_css: string
+  custom_js: string
+  user_agent: string
+  open_at_login: number
+  notifications: number
+  proxy_url: string
+}
+
+type CatalogRow = {
+  id: string
+  name: string
+  url: string
+  icon_url: string
+  category: string
+  description: string
+}
+
+type WindowStateRow = {
+  x: number | null
+  y: number | null
+  width: number
+  height: number
+}
+
+type AppSettingsUpdateKey = keyof Omit<AppSettings, 'appId'>
+type GlobalSettingsRecord = Record<keyof GlobalSettings, GlobalSettings[keyof GlobalSettings]>
 
 export function initDb(): void {
   const userDataPath = app.getPath('userData')
@@ -105,11 +157,11 @@ function migrate(): void {
 // ─── Apps ───────────────────────────────────────────────────────────────────
 
 export function listApps(): App[] {
-  return (db.prepare('SELECT * FROM apps ORDER BY created_at ASC').all() as any[]).map(rowToApp)
+  return (db.prepare('SELECT * FROM apps ORDER BY created_at ASC').all() as AppRow[]).map(rowToApp)
 }
 
 export function getApp(id: string): App | null {
-  const row = db.prepare('SELECT * FROM apps WHERE id = ?').get(id) as any
+  const row = db.prepare('SELECT * FROM apps WHERE id = ?').get(id) as AppRow | undefined
   return row ? rowToApp(row) : null
 }
 
@@ -127,7 +179,7 @@ export function insertApp(app: App): void {
 
 export function updateApp(id: string, data: Partial<Pick<App, 'name' | 'url' | 'iconPath' | 'spaceId'>>): void {
   const fields: string[] = []
-  const values: any[] = []
+  const values: Array<string | null> = []
   if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name) }
   if (data.url !== undefined) { fields.push('url = ?'); values.push(data.url) }
   if (data.iconPath !== undefined) { fields.push('icon_path = ?'); values.push(data.iconPath) }
@@ -141,7 +193,7 @@ export function deleteApp(id: string): void {
   db.prepare('DELETE FROM apps WHERE id = ?').run(id)
 }
 
-function rowToApp(row: any): App {
+function rowToApp(row: AppRow): App {
   return {
     id: row.id,
     name: row.name,
@@ -155,7 +207,7 @@ function rowToApp(row: any): App {
 // ─── Profiles ────────────────────────────────────────────────────────────────
 
 export function listProfiles(appId: string): Profile[] {
-  return (db.prepare('SELECT * FROM profiles WHERE app_id = ? ORDER BY created_at ASC').all(appId) as any[]).map(rowToProfile)
+  return (db.prepare('SELECT * FROM profiles WHERE app_id = ? ORDER BY created_at ASC').all(appId) as ProfileRow[]).map(rowToProfile)
 }
 
 export function insertProfile(profile: Profile): void {
@@ -167,7 +219,7 @@ export function insertProfile(profile: Profile): void {
 
 export function updateProfile(id: string, data: Partial<Pick<Profile, 'name' | 'color'>>): void {
   const fields: string[] = []
-  const values: any[] = []
+  const values: string[] = []
   if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name) }
   if (data.color !== undefined) { fields.push('color = ?'); values.push(data.color) }
   if (fields.length === 0) return
@@ -179,14 +231,14 @@ export function deleteProfile(id: string): void {
   db.prepare('DELETE FROM profiles WHERE id = ?').run(id)
 }
 
-function rowToProfile(row: any): Profile {
+function rowToProfile(row: ProfileRow): Profile {
   return { id: row.id, appId: row.app_id, name: row.name, color: row.color, createdAt: row.created_at }
 }
 
 // ─── Spaces ──────────────────────────────────────────────────────────────────
 
 export function listSpaces(): Space[] {
-  return (db.prepare('SELECT * FROM spaces ORDER BY sort_order ASC').all() as any[]).map(rowToSpace)
+  return (db.prepare('SELECT * FROM spaces ORDER BY sort_order ASC').all() as SpaceRow[]).map(rowToSpace)
 }
 
 export function insertSpace(space: Space): void {
@@ -198,7 +250,7 @@ export function insertSpace(space: Space): void {
 
 export function updateSpace(id: string, data: Partial<Omit<Space, 'id'>>): void {
   const fields: string[] = []
-  const values: any[] = []
+  const values: Array<string | number> = []
   if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name) }
   if (data.color !== undefined) { fields.push('color = ?'); values.push(data.color) }
   if (data.icon !== undefined) { fields.push('icon = ?'); values.push(data.icon) }
@@ -209,18 +261,19 @@ export function updateSpace(id: string, data: Partial<Omit<Space, 'id'>>): void 
 }
 
 export function deleteSpace(id: string): void {
+  if (id === 'default') return
   db.prepare("UPDATE apps SET space_id = 'default' WHERE space_id = ?").run(id)
   db.prepare('DELETE FROM spaces WHERE id = ?').run(id)
 }
 
-function rowToSpace(row: any): Space {
+function rowToSpace(row: SpaceRow): Space {
   return { id: row.id, name: row.name, color: row.color, icon: row.icon, sortOrder: row.sort_order }
 }
 
 // ─── App Settings ────────────────────────────────────────────────────────────
 
 export function getAppSettings(appId: string): AppSettings {
-  const row = db.prepare('SELECT * FROM app_settings WHERE app_id = ?').get(appId) as any
+  const row = db.prepare('SELECT * FROM app_settings WHERE app_id = ?').get(appId) as AppSettingsRow | undefined
   if (!row) return {
     appId, zoomLevel: 1.0, darkMode: false, blockAds: true,
     customCss: '', customJs: '', userAgent: '', openAtLogin: false,
@@ -242,16 +295,17 @@ export function getAppSettings(appId: string): AppSettings {
 
 export function updateAppSettings(appId: string, data: Partial<Omit<AppSettings, 'appId'>>): void {
   const fields: string[] = []
-  const values: any[] = []
-  const map: Record<string, string> = {
+  const values: Array<string | number> = []
+  const map: Record<AppSettingsUpdateKey, string> = {
     zoomLevel: 'zoom_level', darkMode: 'dark_mode', blockAds: 'block_ads',
     customCss: 'custom_css', customJs: 'custom_js', userAgent: 'user_agent',
     openAtLogin: 'open_at_login', notifications: 'notifications', proxyUrl: 'proxy_url',
   }
-  for (const [jsKey, sqlKey] of Object.entries(map)) {
-    if ((data as any)[jsKey] !== undefined) {
+  for (const [jsKey, sqlKey] of Object.entries(map) as [AppSettingsUpdateKey, string][]) {
+    const value = data[jsKey]
+    if (value !== undefined) {
       fields.push(`${sqlKey} = ?`)
-      values.push(typeof (data as any)[jsKey] === 'boolean' ? ((data as any)[jsKey] ? 1 : 0) : (data as any)[jsKey])
+      values.push(typeof value === 'boolean' ? (value ? 1 : 0) : value)
     }
   }
   if (fields.length === 0) return
@@ -263,9 +317,10 @@ export function updateAppSettings(appId: string, data: Partial<Omit<AppSettings,
 
 export function getGlobalSettings(): GlobalSettings {
   const rows = db.prepare('SELECT key, value FROM global_settings').all() as { key: string; value: string }[]
-  const result: any = { ...DEFAULT_GLOBAL_SETTINGS }
+  const result: Partial<GlobalSettingsRecord> = { ...DEFAULT_GLOBAL_SETTINGS }
   for (const row of rows) {
-    result[row.key] = JSON.parse(row.value)
+    const key = row.key as keyof GlobalSettings
+    result[key] = JSON.parse(row.value) as GlobalSettingsRecord[typeof key]
   }
   return result as GlobalSettings
 }
@@ -287,7 +342,7 @@ export function listCatalog(search?: string, category?: string): CatalogApp[] {
   if (category) { conditions.push('category = ?'); params.push(category) }
   if (conditions.length > 0) query += ' WHERE ' + conditions.join(' AND ')
   query += ' ORDER BY name ASC'
-  return (db.prepare(query).all(...params) as any[]).map(row => ({
+  return (db.prepare(query).all(...params) as CatalogRow[]).map(row => ({
     id: row.id, name: row.name, url: row.url, iconUrl: row.icon_url,
     category: row.category, description: row.description,
   }))
@@ -300,12 +355,14 @@ export function isCatalogSeeded(): boolean {
 
 // ─── Window State ─────────────────────────────────────────────────────────────
 
-export function getWindowState(key: string): { x?: number; y?: number; width: number; height: number } {
-  const row = db.prepare('SELECT * FROM window_states WHERE key = ?').get(key) as any
-  return row ? { x: row.x, y: row.y, width: row.width, height: row.height } : { width: 1200, height: 800 }
+export function getWindowState(key: string): WindowState {
+  const row = db.prepare('SELECT * FROM window_states WHERE key = ?').get(key) as WindowStateRow | undefined
+  return row
+    ? { x: row.x ?? undefined, y: row.y ?? undefined, width: row.width, height: row.height }
+    : { width: 1200, height: 800 }
 }
 
-export function saveWindowState(key: string, state: { x?: number; y?: number; width: number; height: number }): void {
+export function saveWindowState(key: string, state: WindowState): void {
   db.prepare(`INSERT OR REPLACE INTO window_states (key, x, y, width, height) VALUES (?, ?, ?, ?, ?)`)
     .run(key, state.x ?? null, state.y ?? null, state.width, state.height)
 }

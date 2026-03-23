@@ -35,7 +35,6 @@ interface AppStore {
   setSpaces: (spaces: Space[]) => void
   addSpace: (space: Space) => void
   removeSpace: (id: string) => void
-  updateLocalSpace: (id: string, data: Partial<Space>) => void
 
   setGlobalSettings: (s: GlobalSettings) => void
 
@@ -95,8 +94,6 @@ export const useStore = create<AppStore>((set) => ({
   setSpaces: (spaces) => set({ spaces }),
   addSpace: (space) => set((s) => ({ spaces: [...s.spaces, space] })),
   removeSpace: (id) => set((s) => ({ spaces: s.spaces.filter((sp) => sp.id !== id) })),
-  updateLocalSpace: (id, data) =>
-    set((s) => ({ spaces: s.spaces.map((sp) => (sp.id === id ? { ...sp, ...data } : sp)) })),
 
   setGlobalSettings: (globalSettings) => set({ globalSettings }),
 

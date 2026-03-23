@@ -18,6 +18,10 @@ export default function AddAppModal() {
     return s
   }
 
+  function getErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : 'Failed to add app.'
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -30,8 +34,8 @@ export default function AddAppModal() {
       const app = await window.api.installApp({ name: name.trim(), url: finalUrl, spaceId })
       addApp(app)
       setShowAddApp(false)
-    } catch (err: any) {
-      setError(err?.message ?? 'Failed to add app.')
+    } catch (err) {
+      setError(getErrorMessage(err))
     } finally { setLoading(false) }
   }
 

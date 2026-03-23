@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../store'
+import type { CreateSpaceInput } from '@shared/types'
 import './SpaceManager.css'
 
 const ICONS = ['🌐','🏠','💼','🎮','🎨','📚','🛠️','🎵','📊','🌿','⚡','🔬','🎯','💡','🔥','🌟']
@@ -8,7 +9,7 @@ const COLORS = ['#FF007F','#FF1493','#8A70D6','#6366f1','#06b6d4','#10b981','#f5
 interface Props { onClose: () => void }
 
 export default function SpaceManager({ onClose }: Props) {
-  const { spaces, addSpace, removeSpace, updateLocalSpace } = useStore()
+  const { spaces, addSpace, removeSpace } = useStore()
   const [name, setName] = useState('')
   const [color, setColor] = useState('#FF007F')
   const [icon, setIcon] = useState('🌐')
@@ -18,7 +19,8 @@ export default function SpaceManager({ onClose }: Props) {
     if (!name.trim()) return
     setAdding(true)
     try {
-      const space = await window.api.createSpace({ name: name.trim(), color, icon })
+      const spaceInput: CreateSpaceInput = { name: name.trim(), color, icon }
+      const space = await window.api.createSpace(spaceInput)
       addSpace(space)
       setName('')
     } finally { setAdding(false) }

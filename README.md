@@ -36,16 +36,32 @@
    ```bash
    npm install
    ```
-3. Start the Vite dev server:
+3. Start the desktop app in development mode:
    ```bash
-   npm start
+   npm run dev
    ```
 
-### Production Build
-To create a production-ready package for macOS:
+### Local Verification
+Run the full local verification suite before cutting a release:
 ```bash
-npm run build
-npm run dist:mac
+npm run verify
+```
+
+### Packaging
+Build a local unpacked desktop bundle:
+```bash
+npm run pack
+```
+
+Build release artifacts:
+```bash
+npm run dist
+```
+
+You can also use the included `Makefile` shortcuts:
+```bash
+make verify
+make dist
 ```
 
 ## 📄 Documentation
@@ -53,6 +69,13 @@ npm run dist:mac
 For more in-depth technical details, check out our specialized documentation in the `assets/` folder:
 - [Build Documentation](./assets/build_documentation.md) — Technical details on architecture and security.
 - [Case Study](./assets/case_study.md) — The "What, Why, and How" behind WebWrangler.
+
+## 🚢 Releases
+
+Release preparation is local-first:
+- Update `package.json` version and `CHANGELOG.md`.
+- Run `npm run verify`.
+- Build release artifacts with `npm run dist`.
 
 ## 🤝 Contributing
 

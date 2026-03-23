@@ -18,6 +18,10 @@ WebWrangler is a premium, privacy-focused productivity tool. We value **performa
     npm install
     ```
 4.  **Create a Branch**: Use a descriptive branch name (e.g., `feature/improved-neon-glows`).
+5.  **Run Local Checks**:
+    ```bash
+    npm run verify
+    ```
 
 ## 🎨 Design Guidelines
 
@@ -45,7 +49,8 @@ Please use the GitHub Issue tracker to report bugs. Include:
 
 1.  Keep PRs focused on a single change.
 2.  Update documentation if you're adding new features.
-3.  Ensure your code follows the existing style and linting rules.
+3.  Ensure `npm run verify` passes before opening a PR.
+4.  Use `make verify` if you prefer `Makefile` shortcuts.
 
 ---
 *Thank you for being part of the WebWrangler journey!*

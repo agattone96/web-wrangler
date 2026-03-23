@@ -2,6 +2,13 @@
 
 All notable changes to the **WebWrangler** project will be documented in this file.
 
+## [Unreleased]
+### Changed
+- Tightened shared Electron IPC typing between the main process, preload bridge, and renderer.
+- Simplified catalog install-state tracking so installed apps are derived from persisted app URLs.
+- Removed the GitHub Actions CI workflow in favor of local verification commands.
+- Added local release and packaging ergonomics with `npm run verify`, `npm run pack`, `npm run release:check`, and a `Makefile`.
+
 ## [1.1.0] — 2026-03-22
 ### Added
 - **Premium "Neon Cyber-Goth" Aesthetic**: Complete visual overhaul with glassmorphism and advanced neon glow effects.

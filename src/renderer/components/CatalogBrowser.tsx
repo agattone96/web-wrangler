@@ -11,32 +11,25 @@ export default function CatalogBrowser() {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('All')
   const [installing, setInstalling] = useState<string | null>(null)
-  const [installed, setInstalled] = useState<Set<string>>(new Set())
   const { apps } = useStore()
 
   useEffect(() => {
-    window.api.listCatalog().then(setCatalog)
-    // Mark already installed apps
-    const urls = new Set(apps.map((a) => a.url))
-    setCatalog((prev) => prev) // refresh after install
-    setInstalled(new Set(apps.map((a) => {
-      const found = catalog.find((c) => c.url === a.url)
-      return found?.id ?? ''
-    }).filter(Boolean)))
-  }, [apps])
-
-  useEffect(() => {
-    window.api.listCatalog(search || undefined, category !== 'All' ? category : undefined)
+    window.api.listCatalog({
+      search: search || undefined,
+      category: category !== 'All' ? category : undefined
+    })
       .then(setCatalog)
   }, [search, category])
 
+  const installedUrls = useMemo(() => new Set(apps.map((app) => app.url)), [apps])
+
   async function handleInstall(item: CatalogApp) {
+    if (installedUrls.has(item.url) || installing === item.id) return
     setInstalling(item.id)
     try {
       const spaceId = spaces[0]?.id ?? 'default'
       const app = await window.api.installApp({ name: item.name, url: item.url, spaceId })
       addApp(app)
-      setInstalled((prev) => new Set([...prev, item.id]))
     } finally { setInstalling(null) }
   }
 
@@ -90,7 +83,7 @@ export default function CatalogBrowser() {
           ) : (
             <div className="catalog-grid">
               {catalog.map((item) => {
-                const isInstalled = installed.has(item.id)
+                const isInstalled = installedUrls.has(item.url)
                 const hasIconError = iconErrors.has(item.id)
                 return (
                   <div key={item.id} className={`catalog-card card ${isInstalled ? 'catalog-installed' : ''}`}>

@@ -7,13 +7,8 @@ import AddAppModal from './components/AddAppModal'
 import CatalogBrowser from './components/CatalogBrowser'
 import AppSettingsModal from './components/AppSettingsModal'
 import GlobalSettingsModal from './components/GlobalSettingsModal'
+import ErrorBoundary from './components/ErrorBoundary'
 import './App.css'
-
-declare global {
-  interface Window {
-    api: any
-  }
-}
 
 export default function App() {
   const {
@@ -69,20 +64,22 @@ export default function App() {
   }, [handleKeyDown])
 
   return (
-    <div className="app-shell scanlines">
-      <TitleBar />
-      <div className="app-body">
-        <Sidebar />
-        <main className="app-main">
-          <AppGrid />
-        </main>
-      </div>
+    <ErrorBoundary>
+      <div className="app-shell scanlines">
+        <TitleBar />
+        <div className="app-body">
+          <Sidebar />
+          <main className="app-main">
+            <AppGrid />
+          </main>
+        </div>
 
-      {/* Modals */}
-      {showAddApp && <AddAppModal />}
-      {showCatalog && <CatalogBrowser />}
-      {settingsTargetAppId && <AppSettingsModal appId={settingsTargetAppId} />}
-      {showGlobalSettings && <GlobalSettingsModal />}
-    </div>
+        {/* Modals */}
+        {showAddApp && <AddAppModal />}
+        {showCatalog && <CatalogBrowser />}
+        {settingsTargetAppId && <AppSettingsModal appId={settingsTargetAppId} />}
+        {showGlobalSettings && <GlobalSettingsModal />}
+      </div>
+    </ErrorBoundary>
   )
 }

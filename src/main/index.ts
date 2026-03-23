@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, protocol } from 'electron'
+import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, protocol, net, session } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import { v4 as uuid } from 'uuid'
@@ -10,10 +10,10 @@ import {
   getGlobalSettings, updateGlobalSettings,
   listCatalog, getWindowState, saveWindowState,
 } from './db'
-import { openAppWindow, closeAppWindow } from './window-manager'
+import { openAppWindow, reloadAppSettings } from './window-manager'
 import { fetchFavicon } from './app-icon-fetcher'
 import { IPC } from '../shared/types'
-import type { App, Profile, Space } from '../shared/types'
+import type { App, Profile, Space, InstallAppInput, CreateProfileInput, CreateSpaceInput, CatalogQuery } from '../shared/types'
 
 const isDev = !app.isPackaged
 
@@ -23,6 +23,15 @@ app.setName('WebWrangler')
 if (process.platform === 'win32') {
   app.setAppUserModelId('io.personal.web-wrangler')
 }
+
+// ─── Error Handling ────────────────────────────────────────────────────────
+process.on('uncaughtException', (error) => {
+  console.error('[Main] Uncaught Exception:', error)
+})
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Main] Unhandled Rejection:', reason)
+})
 
 // ─── Single Instance Lock ──────────────────────────────────────────────────
 if (!app.requestSingleInstanceLock()) {
@@ -40,12 +49,20 @@ app.on('second-instance', () => {
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 
-// ─── Protocol ───────────────────────────────────────────────────────────────
 // Register app:// protocol for serving local files safely in production
 if (!isDev) {
   protocol.registerSchemesAsPrivileged([
     { scheme: 'app', privileges: { secure: true, standard: true } },
   ])
+}
+
+function registerProtocol(): void {
+  if (isDev) return
+  protocol.handle('app', (request) => {
+    const url = request.url.replace('app://', '')
+    const filePath = path.join(app.getAppPath(), 'dist/renderer', url || 'index.html')
+    return net.fetch(`file://${filePath}`)
+  })
 }
 
 // ─── Main Window ──────────────────────────────────────────────────────────
@@ -219,7 +236,7 @@ function registerIpcHandlers(): void {
   // Apps
   ipcMain.handle(IPC.LIST_APPS, () => listApps())
 
-  ipcMain.handle(IPC.INSTALL_APP, async (_e, data: { name: string; url: string; spaceId?: string }) => {
+  ipcMain.handle(IPC.INSTALL_APP, async (_e, data: InstallAppInput) => {
     const id = uuid()
     const appEntry: App = {
       id,
@@ -269,7 +286,7 @@ function registerIpcHandlers(): void {
   // Profiles
   ipcMain.handle(IPC.LIST_PROFILES, (_e, appId: string) => listProfiles(appId))
 
-  ipcMain.handle(IPC.CREATE_PROFILE, (_e, data: { appId: string; name: string; color: string }) => {
+  ipcMain.handle(IPC.CREATE_PROFILE, (_e, data: CreateProfileInput) => {
     const profile: Profile = {
       id: uuid(),
       appId: data.appId,
@@ -289,7 +306,7 @@ function registerIpcHandlers(): void {
   // Spaces
   ipcMain.handle(IPC.LIST_SPACES, () => listSpaces())
 
-  ipcMain.handle(IPC.CREATE_SPACE, (_e, data: { name: string; color: string; icon: string }) => {
+  ipcMain.handle(IPC.CREATE_SPACE, (_e, data: CreateSpaceInput) => {
     const spaces = listSpaces()
     const space: Space = {
       id: uuid(),
@@ -310,8 +327,10 @@ function registerIpcHandlers(): void {
   // App Settings
   ipcMain.handle(IPC.GET_APP_SETTINGS, (_e, appId: string) => getAppSettings(appId))
 
-  ipcMain.handle(IPC.UPDATE_APP_SETTINGS, (_e, appId: string, data: Parameters<typeof updateAppSettings>[1]) =>
-    updateAppSettings(appId, data))
+  ipcMain.handle(IPC.UPDATE_APP_SETTINGS, async (_e, appId: string, data: Parameters<typeof updateAppSettings>[1]) => {
+    updateAppSettings(appId, data)
+    await reloadAppSettings(appId)
+  })
 
   // Global Settings
   ipcMain.handle(IPC.GET_GLOBAL_SETTINGS, () => getGlobalSettings())
@@ -320,15 +339,35 @@ function registerIpcHandlers(): void {
     updateGlobalSettings(data))
 
   // Catalog
-  ipcMain.handle(IPC.LIST_CATALOG, (_e, search?: string, category?: string) =>
-    listCatalog(search, category))
+  ipcMain.handle(IPC.LIST_CATALOG, (_e, query?: CatalogQuery) =>
+    listCatalog(query?.search, query?.category))
 }
 
 // ─── App Lifecycle ──────────────────────────────────────────────────────────
 
+function setupCsp(): void {
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self' 'unsafe-inline' data: app:; " +
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; " +
+          "connect-src 'self' https: wss:; " +
+          "img-src 'self' data: https: file:; " +
+          "style-src 'self' 'unsafe-inline' https:; " +
+          "font-src 'self' https: data:;"
+        ]
+      }
+    })
+  })
+}
+
 app.whenReady().then(() => {
   initDb()
   registerIpcHandlers()
+  registerProtocol()
+  setupCsp()
   createMenu()
   createMainWindow()
 

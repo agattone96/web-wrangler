@@ -1,34 +1,24 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { App, Profile, Space, AppSettings, CatalogApp, GlobalSettings } from '../shared/types'
-const IPC = {
-  LIST_APPS: 'apps:list',
-  INSTALL_APP: 'apps:install',
-  REMOVE_APP: 'apps:remove',
-  UPDATE_APP: 'apps:update',
-  OPEN_APP: 'apps:open',
-  FETCH_ICON: 'apps:fetch-icon',
-  LIST_PROFILES: 'profiles:list',
-  CREATE_PROFILE: 'profiles:create',
-  UPDATE_PROFILE: 'profiles:update',
-  DELETE_PROFILE: 'profiles:delete',
-  LIST_SPACES: 'spaces:list',
-  CREATE_SPACE: 'spaces:create',
-  UPDATE_SPACE: 'spaces:update',
-  DELETE_SPACE: 'spaces:delete',
-  GET_APP_SETTINGS: 'settings:get-app',
-  UPDATE_APP_SETTINGS: 'settings:update-app',
-  GET_GLOBAL_SETTINGS: 'settings:get-global',
-  UPDATE_GLOBAL_SETTINGS: 'settings:update-global',
-  LIST_CATALOG: 'catalog:list',
-  APP_OPENED: 'events:app-opened',
-  APP_CLOSED: 'events:app-closed',
-} as const
+import { IPC } from '../shared/types'
+import type {
+  App,
+  Profile,
+  Space,
+  AppSettings,
+  CatalogApp,
+  GlobalSettings,
+  PreloadApi,
+  InstallAppInput,
+  CreateProfileInput,
+  CreateSpaceInput,
+  CatalogQuery
+} from '../shared/types'
 
 // Expose safe IPC bridge to renderer
-contextBridge.exposeInMainWorld('api', {
+const api: PreloadApi = {
   // Apps
   listApps: (): Promise<App[]> => ipcRenderer.invoke(IPC.LIST_APPS),
-  installApp: (data: { name: string; url: string; spaceId?: string }): Promise<App> =>
+  installApp: (data: InstallAppInput): Promise<App> =>
     ipcRenderer.invoke(IPC.INSTALL_APP, data),
   removeApp: (id: string): Promise<void> => ipcRenderer.invoke(IPC.REMOVE_APP, id),
   updateApp: (id: string, data: Partial<Pick<App, 'name' | 'url' | 'iconPath' | 'spaceId'>>): Promise<void> =>
@@ -40,7 +30,7 @@ contextBridge.exposeInMainWorld('api', {
 
   // Profiles
   listProfiles: (appId: string): Promise<Profile[]> => ipcRenderer.invoke(IPC.LIST_PROFILES, appId),
-  createProfile: (data: { appId: string; name: string; color: string }): Promise<Profile> =>
+  createProfile: (data: CreateProfileInput): Promise<Profile> =>
     ipcRenderer.invoke(IPC.CREATE_PROFILE, data),
   updateProfile: (id: string, data: Partial<Pick<Profile, 'name' | 'color'>>): Promise<void> =>
     ipcRenderer.invoke(IPC.UPDATE_PROFILE, id, data),
@@ -48,7 +38,7 @@ contextBridge.exposeInMainWorld('api', {
 
   // Spaces
   listSpaces: (): Promise<Space[]> => ipcRenderer.invoke(IPC.LIST_SPACES),
-  createSpace: (data: { name: string; color: string; icon: string }): Promise<Space> =>
+  createSpace: (data: CreateSpaceInput): Promise<Space> =>
     ipcRenderer.invoke(IPC.CREATE_SPACE, data),
   updateSpace: (id: string, data: Partial<Omit<Space, 'id'>>): Promise<void> =>
     ipcRenderer.invoke(IPC.UPDATE_SPACE, id, data),
@@ -65,8 +55,8 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke(IPC.UPDATE_GLOBAL_SETTINGS, data),
 
   // Catalog
-  listCatalog: (search?: string, category?: string): Promise<CatalogApp[]> =>
-    ipcRenderer.invoke(IPC.LIST_CATALOG, search, category),
+  listCatalog: (query?: CatalogQuery): Promise<CatalogApp[]> =>
+    ipcRenderer.invoke(IPC.LIST_CATALOG, query),
 
   // Events (main → renderer)
   onAppOpened: (cb: (appId: string) => void) => {
@@ -79,4 +69,6 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.on(IPC.APP_CLOSED, handler)
     return () => ipcRenderer.off(IPC.APP_CLOSED, handler)
   },
-})
+}
+
+contextBridge.exposeInMainWorld('api', api)

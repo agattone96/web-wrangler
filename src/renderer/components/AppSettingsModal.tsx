@@ -24,7 +24,8 @@ export default function AppSettingsModal({ appId }: Props) {
   async function save() {
     if (!settings) return
     setSaving(true)
-    const { appId: _, ...rest } = settings
+    const { appId: currentAppId, ...rest } = settings
+    void currentAppId
     await window.api.updateAppSettings(appId, rest)
     setSaving(false); setSaved(true)
     setTimeout(() => setSaved(false), 2000)
