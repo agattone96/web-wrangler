@@ -1,89 +1,60 @@
-# WebWrangler
+# 🌐 WebWrangler: Reclaim Your Digital Workspace
 
-**WebWrangler** is a premium, privacy-focused desktop application designed to provide a dedicated and highly performant workspace for your favorite web apps. Built with a signature "Neon Cyber-Goth" aesthetic, it combines robust security features with a stunning visual experience.
+**Are you drowning in browser tabs? Is your computer sounding like a jet engine just from keeping a few web apps open?** Meet **WebWrangler**. It's not just another browser—it's a lightning-fast, hyper-secure desktop command center for all your favorite websites and web apps. Stop wrestling with browser clutter and step into a beautifully organized, private, and distraction-free zone.
 
-![WebWrangler App Icon](./assets/icon.png)
+## ✨ Why WebWrangler is an Absolute Game-Changer
 
-## 🚀 Key Features
-
-- **Dedicated App Catalog**: A pre-seeded collection of popular web apps (Gmail, Slack, Notion, etc.) ready to be "wrangled" into your workspace.
-- **Neon Cyber-Goth UI**: A custom-engineered design system featuring glassmorphism, pulsing neon glows, and micro-animations.
-- **Privacy First**: 
-  - Integrated **native ad-blocking** via the Ghostery engine.
-  - **Universal Dark Mode** support for all guest applications using a bundled DarkReader injection system.
-  - Complete local data persistence via **SQLite**.
-- **Performance Optimized**: Built on **Electron** + **Vite** + **TypeScript** for near-instant load times and zero-latency interactions.
-- **Multi-Profile & Spaces**: Organize your apps into custom spaces (Work, Personal, Dev) with isolated profiles.
-
-## 🛠 Tech Stack
-
-- **Core**: Electron, React, TypeScript
-- **Styling**: Vanilla CSS (Custom Design System)
-- **Database**: better-sqlite3
-- **Ad-blocking**: @ghostery/adblocker-electron
-- **Dark Mode**: localized darkreader injection
-- **Build Tools**: Vite, tsc, electron-builder
-
-## 📦 Installation & Setup
-
-### Prerequisites
-- Node.js (v18+)
-- npm
-
-### Development
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the desktop app in development mode:
-   ```bash
-   npm run dev
-   ```
-
-### Local Verification
-Run the full local verification suite before cutting a release:
-```bash
-npm run verify
-```
-
-### Packaging
-Build a local unpacked desktop bundle:
-```bash
-npm run pack
-```
-
-Build release artifacts:
-```bash
-npm run dist
-```
-
-You can also use the included `Makefile` shortcuts:
-```bash
-make verify
-make dist
-```
-
-## 📄 Documentation
-
-For more in-depth technical details, check out our specialized documentation in the `assets/` folder:
-- [Build Documentation](./assets/build_documentation.md) — Technical details on architecture and security.
-- [Case Study](./assets/case_study.md) — The "What, Why, and How" behind WebWrangler.
-
-## 🚢 Releases
-
-Release preparation is local-first:
-- Update `package.json` version and `CHANGELOG.md`.
-- Run `npm run verify`.
-- Build release artifacts with `npm run dist`.
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on how to get started.
-
-## 📜 License
-
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+* 🚀 **Blazing Fast & Lightweight:** Say goodbye to lag. WebWrangler forcefully strips away invisible background trackers, bloatware, and annoying ads *before* they even load. The result? A buttery-smooth experience that sips your computer's memory instead of guzzling it.
+* 🛡️ **Ironclad Privacy:** What happens in WebWrangler, stays in WebWrangler. Every app runs in its own secure, isolated vault. That means social media sites and ad networks absolutely cannot snoop on what you're doing in your other tabs. 
+* 🌙 **Gorgeous Universal Dark Mode:** We've built in a beautiful, highly optimized dark theme that seamlessly forces *every single website* into a sleek dark mode. No clunky browser extensions required. 
+* 🧠 **Photographic Memory:** Close the app in a hurry? No problem. WebWrangler instantly saves your exact setup. When you come back, your entire workspace is ready and waiting right where you left it.
 
 ---
-*Built with 💖 for the modern web wrangler.*
+
+## 🛠️ Get Started in Minutes
+
+Ready to completely upgrade your workflow? Getting WebWrangler up and running on your machine is incredibly straightforward. *(Just make sure you have Node.js installed on your system!)*
+
+### 1. Grab the Code
+Open up your terminal and clone the app directly to your computer:
+```bash
+git clone [https://github.com/agattone96/web-wrangler.git](https://github.com/agattone96/web-wrangler.git)
+cd web-wrangler
+```
+
+### 2. Install the Engine
+Let the package manager download everything WebWrangler needs to run at top speed:
+```bash
+npm install
+```
+
+### 3. Launch Your Workspace
+Fire up the app in development mode and experience the magic (includes hot-reloading!):
+```bash
+npm run dev
+```
+
+---
+
+## 🧰 The Ultimate Developer Toolkit (Command Line Arsenal)
+
+Whether you want to build a standalone app, clean up the code, or run security checks, we've packed in every command you could possibly need. Run any of these from the root folder:
+
+### 📦 Building & Packaging
+Want to turn WebWrangler into a permanent desktop app? Use these commands to build it for Windows, Mac, or Linux.
+* **`npm run build`** - Compiles all the TypeScript and prepares the core app files for production.
+* **`npm run dist`** - The big one! Compiles the app and generates the final, installable application files (like `.exe`, `.dmg`, or `.AppImage`) inside the `dist/` folder.
+* **`npm run pack`** - Creates an unpacked version of the app for fast local testing without taking the time to compress it into an installer.
+
+### 🧹 Quality Control & Formatting
+Keep the codebase spotless and bug-free with our built-in maintenance tools.
+* **`npm run lint`** - Scans the code for potential bugs, bad practices, and messy formatting.
+* **`npm run format`** - Automatically magically fixes code spacing, quotes, and styling across the entire project.
+* **`npm test`** - Runs our automated testing suite to make sure you didn't accidentally break anything! 
+* **`npm run verify`** - The ultimate checkpoint. Runs linting, formatting, and testing all at once. *(Always run this before submitting a Pull Request!)*
+
+### 🛠️ Utilities
+* **`npm run clean`** - Nukes the `dist/` and `build/` folders so you can start completely fresh. Great for fixing weird cache issues.
+* **`npm update`** - Checks for and safely installs updates for all the under-the-hood packages powering WebWrangler.
+
+*Built for speed, privacy, and absolute peace of mind.*
