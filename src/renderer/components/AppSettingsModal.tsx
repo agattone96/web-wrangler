@@ -1,9 +1,21 @@
 import { useState, useEffect } from 'react'
 import { useStore } from '../store'
-import type { AppSettings } from '@shared/types'
+import type { AppSettings, AppSettingsUpdateResult } from '@shared/types'
 import './AppSettingsModal.css'
 
 interface Props { appId: string }
+
+const FIELD_LABELS: Record<keyof Omit<AppSettings, 'appId'>, string> = {
+  zoomLevel: 'Zoom',
+  darkMode: 'Dark Mode',
+  blockAds: 'Ad Blocking',
+  customCss: 'Custom CSS',
+  customJs: 'Custom JavaScript',
+  userAgent: 'User Agent',
+  openAtLogin: 'Open at Login',
+  notifications: 'Notifications',
+  proxyUrl: 'Proxy',
+}
 
 export default function AppSettingsModal({ appId }: Props) {
   const { apps, setSettingsTargetApp } = useStore()
@@ -11,6 +23,7 @@ export default function AppSettingsModal({ appId }: Props) {
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [applyResult, setApplyResult] = useState<AppSettingsUpdateResult | null>(null)
   const [activeTab, setActiveTab] = useState<'general' | 'advanced'>('general')
 
   useEffect(() => {
@@ -18,6 +31,7 @@ export default function AppSettingsModal({ appId }: Props) {
   }, [appId])
 
   function patch<K extends keyof Omit<AppSettings, 'appId'>>(key: K, value: AppSettings[K]) {
+    setApplyResult(null)
     setSettings((prev) => prev ? { ...prev, [key]: value } : prev)
   }
 
@@ -26,7 +40,8 @@ export default function AppSettingsModal({ appId }: Props) {
     setSaving(true)
     const { appId: currentAppId, ...rest } = settings
     void currentAppId
-    await window.api.updateAppSettings(appId, rest)
+    const result = await window.api.updateAppSettings(appId, rest)
+    setApplyResult(result)
     setSaving(false); setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -53,6 +68,11 @@ export default function AppSettingsModal({ appId }: Props) {
         </div>
 
         <div className="modal-body settings-body">
+          {applyResult?.reopenRequiredFields.length ? (
+            <div className="settings-notice">
+              Reopen this app window to apply: {applyResult.reopenRequiredFields.map((field) => FIELD_LABELS[field]).join(', ')}.
+            </div>
+          ) : null}
           {activeTab === 'general' && (
             <div className="settings-section">
               <div className="setting-row">

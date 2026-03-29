@@ -93,7 +93,7 @@ export interface PreloadApi {
   updateSpace: (id: string, data: Partial<Omit<Space, 'id'>>) => Promise<void>
   deleteSpace: (id: string) => Promise<void>
   getAppSettings: (appId: string) => Promise<AppSettings>
-  updateAppSettings: (appId: string, data: Partial<Omit<AppSettings, 'appId'>>) => Promise<void>
+  updateAppSettings: (appId: string, data: Partial<Omit<AppSettings, 'appId'>>) => Promise<AppSettingsUpdateResult>
   getGlobalSettings: () => Promise<GlobalSettings>
   updateGlobalSettings: (data: Partial<GlobalSettings>) => Promise<void>
   listCatalog: (query?: CatalogQuery) => Promise<CatalogApp[]>
@@ -147,6 +147,11 @@ export interface GlobalSettings {
   runInBackground: boolean
   showInMenuBar: boolean
   theme: 'system' | 'light' | 'dark'
+}
+
+export interface AppSettingsUpdateResult {
+  appliedLive: boolean
+  reopenRequiredFields: Array<keyof Omit<AppSettings, 'appId'>>
 }
 
 export const DEFAULT_GLOBAL_SETTINGS: GlobalSettings = {

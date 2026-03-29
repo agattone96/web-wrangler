@@ -5,6 +5,7 @@ import type {
   Profile,
   Space,
   AppSettings,
+  AppSettingsUpdateResult,
   CatalogApp,
   GlobalSettings,
   PreloadApi,
@@ -46,7 +47,7 @@ const api: PreloadApi = {
 
   // App Settings
   getAppSettings: (appId: string): Promise<AppSettings> => ipcRenderer.invoke(IPC.GET_APP_SETTINGS, appId),
-  updateAppSettings: (appId: string, data: Partial<Omit<AppSettings, 'appId'>>): Promise<void> =>
+  updateAppSettings: (appId: string, data: Partial<Omit<AppSettings, 'appId'>>): Promise<AppSettingsUpdateResult> =>
     ipcRenderer.invoke(IPC.UPDATE_APP_SETTINGS, appId, data),
 
   // Global Settings

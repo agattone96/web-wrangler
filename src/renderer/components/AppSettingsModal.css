@@ -26,3 +26,13 @@
   min-height: 80px;
   line-height: 1.5;
 }
+
+.settings-notice {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 184, 77, 0.35);
+  border-radius: 10px;
+  background: rgba(255, 184, 77, 0.08);
+  color: var(--color-text);
+  font-size: 12px;
+}

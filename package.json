@@ -35,7 +35,7 @@
     "better-sqlite3": "^11.8.0",
     "cross-fetch": "^4.0.0",
     "darkreader": "^4.9.80",
-    "electron-store": "^10.0.0",
+    "electron-store": "^8.1.0",
     "fs-extra": "^11.2.0",
     "uuid": "^9.0.1"
   },

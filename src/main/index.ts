@@ -8,12 +8,20 @@ import {
   listSpaces, insertSpace, updateSpace, deleteSpace,
   getAppSettings, updateAppSettings,
   getGlobalSettings, updateGlobalSettings,
-  listCatalog, getWindowState, saveWindowState,
+  listCatalog, saveWindowState, getWindowState,
 } from './db'
-import { openAppWindow, reloadAppSettings } from './window-manager'
+import { openAppWindow, reloadAppSettings, getOpenWindows } from './window-manager'
 import { fetchFavicon } from './app-icon-fetcher'
 import { IPC } from '../shared/types'
 import type { App, Profile, Space, InstallAppInput, CreateProfileInput, CreateSpaceInput, CatalogQuery } from '../shared/types'
+import { setupRequestFilter } from './request-filter'
+import storeRaw from './store'
+import { getMainWindowState, persistWindowBounds } from './window-state'
+import { getAppSettingsUpdateResult } from './app-settings-runtime'
+import { shouldCreateTray, shouldDestroyTray } from './tray-state'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const store: any = storeRaw
 
 const isDev = !app.isPackaged
 
@@ -68,7 +76,7 @@ function registerProtocol(): void {
 // ─── Main Window ──────────────────────────────────────────────────────────
 
 function createMainWindow(): void {
-  const savedState = getWindowState('main')
+  const savedState = getMainWindowState(getWindowState)
 
   mainWindow = new BrowserWindow({
     x: savedState.x,
@@ -85,6 +93,7 @@ function createMainWindow(): void {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      sandbox: true,
       preload: path.join(__dirname, '../preload/index.js'),
     },
   })
@@ -131,9 +140,7 @@ function createMainWindow(): void {
       e.preventDefault()
       mainWindow!.hide()
     } else {
-      const [width, height] = mainWindow!.getSize()
-      const [x, y] = mainWindow!.getPosition()
-      saveWindowState('main', { x, y, width, height })
+      persistWindowBounds(mainWindow!, saveWindowState, 'main')
     }
   })
 
@@ -186,6 +193,22 @@ function createTray(): void {
   })
 }
 
+function reconcileTray(showInMenuBar: boolean): void {
+  if (shouldCreateTray(showInMenuBar, !!tray)) {
+    createTray()
+    return
+  }
+
+  if (shouldDestroyTray(showInMenuBar, !!tray)) {
+    tray?.destroy()
+    tray = null
+  }
+}
+
+function notifyAppClosed(appId: string): void {
+  mainWindow?.webContents.send(IPC.APP_CLOSED, appId)
+}
+
 // ─── Menu ─────────────────────────────────────────────────────────────────
 
 function createMenu(): void {
@@ -232,11 +255,26 @@ function createMenu(): void {
 
 // ─── IPC Handlers ──────────────────────────────────────────────────────────
 
+function validateSender(event: Electron.IpcMainInvokeEvent): boolean {
+  const { senderFrame } = event
+  if (!senderFrame) return false
+
+  const url = senderFrame.url
+  if (isDev) {
+    return url.startsWith('http://127.0.0.1:5173') || url.startsWith('app://')
+  }
+  return url.startsWith('app://')
+}
+
 function registerIpcHandlers(): void {
   // Apps
-  ipcMain.handle(IPC.LIST_APPS, () => listApps())
+  ipcMain.handle(IPC.LIST_APPS, (e) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    return listApps()
+  })
 
-  ipcMain.handle(IPC.INSTALL_APP, async (_e, data: InstallAppInput) => {
+  ipcMain.handle(IPC.INSTALL_APP, async (e, data: InstallAppInput) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
     const id = uuid()
     const appEntry: App = {
       id,
@@ -266,27 +304,39 @@ function registerIpcHandlers(): void {
     return appEntry
   })
 
-  ipcMain.handle(IPC.REMOVE_APP, (_e, id: string) => deleteApp(id))
+  ipcMain.handle(IPC.REMOVE_APP, (e, id: string) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    return deleteApp(id)
+  })
 
-  ipcMain.handle(IPC.UPDATE_APP, (_e, id: string, data: Parameters<typeof updateApp>[1]) =>
-    updateApp(id, data))
+  ipcMain.handle(IPC.UPDATE_APP, (e, id: string, data: Parameters<typeof updateApp>[1]) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    return updateApp(id, data)
+  })
 
-  ipcMain.handle(IPC.OPEN_APP, async (_e, appId: string, profileId: string) => {
+  ipcMain.handle(IPC.OPEN_APP, async (e, appId: string, profileId: string) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
     const appEntry = getApp(appId)
     const profiles = listProfiles(appId)
     const profile = profiles.find(p => p.id === profileId) ?? profiles[0]
     if (!appEntry || !profile) throw new Error('App or profile not found')
-    await openAppWindow(appEntry, profile)
+    await openAppWindow(appEntry, profile, { onClosed: notifyAppClosed })
     mainWindow?.webContents.send(IPC.APP_OPENED, appId)
   })
 
-  ipcMain.handle(IPC.FETCH_ICON, async (_e, url: string, appId: string) =>
-    fetchFavicon(url, appId))
+  ipcMain.handle(IPC.FETCH_ICON, async (e, url: string, appId: string) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    return fetchFavicon(url, appId)
+  })
 
   // Profiles
-  ipcMain.handle(IPC.LIST_PROFILES, (_e, appId: string) => listProfiles(appId))
+  ipcMain.handle(IPC.LIST_PROFILES, (e, appId: string) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    return listProfiles(appId)
+  })
 
-  ipcMain.handle(IPC.CREATE_PROFILE, (_e, data: CreateProfileInput) => {
+  ipcMain.handle(IPC.CREATE_PROFILE, (e, data: CreateProfileInput) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
     const profile: Profile = {
       id: uuid(),
       appId: data.appId,
@@ -298,15 +348,24 @@ function registerIpcHandlers(): void {
     return profile
   })
 
-  ipcMain.handle(IPC.UPDATE_PROFILE, (_e, id: string, data: Parameters<typeof updateProfile>[1]) =>
-    updateProfile(id, data))
+  ipcMain.handle(IPC.UPDATE_PROFILE, (e, id: string, data: Parameters<typeof updateProfile>[1]) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    return updateProfile(id, data)
+  })
 
-  ipcMain.handle(IPC.DELETE_PROFILE, (_e, id: string) => deleteProfile(id))
+  ipcMain.handle(IPC.DELETE_PROFILE, (e, id: string) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    return deleteProfile(id)
+  })
 
   // Spaces
-  ipcMain.handle(IPC.LIST_SPACES, () => listSpaces())
+  ipcMain.handle(IPC.LIST_SPACES, (e) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    return listSpaces()
+  })
 
-  ipcMain.handle(IPC.CREATE_SPACE, (_e, data: CreateSpaceInput) => {
+  ipcMain.handle(IPC.CREATE_SPACE, (e, data: CreateSpaceInput) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
     const spaces = listSpaces()
     const space: Space = {
       id: uuid(),
@@ -319,28 +378,51 @@ function registerIpcHandlers(): void {
     return space
   })
 
-  ipcMain.handle(IPC.UPDATE_SPACE, (_e, id: string, data: Parameters<typeof updateSpace>[1]) =>
-    updateSpace(id, data))
+  ipcMain.handle(IPC.UPDATE_SPACE, (e, id: string, data: Parameters<typeof updateSpace>[1]) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    return updateSpace(id, data)
+  })
 
-  ipcMain.handle(IPC.DELETE_SPACE, (_e, id: string) => deleteSpace(id))
+  ipcMain.handle(IPC.DELETE_SPACE, (e, id: string) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    return deleteSpace(id)
+  })
 
   // App Settings
-  ipcMain.handle(IPC.GET_APP_SETTINGS, (_e, appId: string) => getAppSettings(appId))
+  ipcMain.handle(IPC.GET_APP_SETTINGS, (e, appId: string) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    return getAppSettings(appId)
+  })
 
-  ipcMain.handle(IPC.UPDATE_APP_SETTINGS, async (_e, appId: string, data: Parameters<typeof updateAppSettings>[1]) => {
+  ipcMain.handle(IPC.UPDATE_APP_SETTINGS, async (e, appId: string, data: Parameters<typeof updateAppSettings>[1]) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    const result = getAppSettingsUpdateResult(data)
     updateAppSettings(appId, data)
-    await reloadAppSettings(appId)
+    if (result.appliedLive) {
+      await reloadAppSettings(appId)
+    }
+    return result
   })
 
   // Global Settings
-  ipcMain.handle(IPC.GET_GLOBAL_SETTINGS, () => getGlobalSettings())
+  ipcMain.handle(IPC.GET_GLOBAL_SETTINGS, (e) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    return getGlobalSettings()
+  })
 
-  ipcMain.handle(IPC.UPDATE_GLOBAL_SETTINGS, (_e, data: Parameters<typeof updateGlobalSettings>[0]) =>
-    updateGlobalSettings(data))
+  ipcMain.handle(IPC.UPDATE_GLOBAL_SETTINGS, (e, data: Parameters<typeof updateGlobalSettings>[0]) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    updateGlobalSettings(data)
+    const nextSettings = getGlobalSettings()
+    reconcileTray(nextSettings.showInMenuBar)
+    return nextSettings
+  })
 
   // Catalog
-  ipcMain.handle(IPC.LIST_CATALOG, (_e, query?: CatalogQuery) =>
-    listCatalog(query?.search, query?.category))
+  ipcMain.handle(IPC.LIST_CATALOG, (e, query?: CatalogQuery) => {
+    if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    return listCatalog(query?.search, query?.category)
+  })
 }
 
 // ─── App Lifecycle ──────────────────────────────────────────────────────────
@@ -368,11 +450,23 @@ app.whenReady().then(() => {
   registerIpcHandlers()
   registerProtocol()
   setupCsp()
+  setupRequestFilter(session.defaultSession)
   createMenu()
   createMainWindow()
 
+  // Restore session
+  const lastOpenedApps = store.get('lastOpenedApps') || []
+  for (const sessionInfo of lastOpenedApps) {
+    const appEntry = getApp(sessionInfo.appId)
+    const profiles = listProfiles(sessionInfo.appId)
+    const profile = profiles.find(p => p.id === sessionInfo.profileId) ?? profiles[0]
+    if (appEntry && profile) {
+      openAppWindow(appEntry, profile, { onClosed: notifyAppClosed }).catch(console.error)
+    }
+  }
+
   const settings = getGlobalSettings()
-  if (settings.showInMenuBar) createTray()
+  reconcileTray(settings.showInMenuBar)
 })
 
 app.on('window-all-closed', () => {
@@ -392,8 +486,16 @@ app.on('activate', () => {
 
 app.on('before-quit', () => {
   if (mainWindow && !mainWindow.isDestroyed()) {
-    const [width, height] = mainWindow.getSize()
-    const [x, y] = mainWindow.getPosition()
-    saveWindowState('main', { x, y, width, height })
+    persistWindowBounds(mainWindow, saveWindowState, 'main')
   }
+
+  // Save last opened apps
+  const openWindowsMap = getOpenWindows()
+  const appsToSave: { appId: string; profileId: string }[] = []
+  
+  for (const key of openWindowsMap.keys()) {
+    const [appId, profileId] = key.split('::')
+    appsToSave.push({ appId, profileId })
+  }
+  store.set('lastOpenedApps', appsToSave)
 })

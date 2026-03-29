@@ -2,12 +2,18 @@ import { BrowserWindow, session, app, shell } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import { getAppSettings, getWindowState, saveWindowState } from './db'
-import type { App, Profile, WindowState } from '../shared/types'
-import { setupAdblocker, disableAdblocker } from './adblocker'
+import { App, Profile, WindowState } from '../shared/types'
+import { setupRequestFilter } from './request-filter'
+import { persistWindowBounds } from './window-state'
 
 // track open windows: key = `${appId}::${profileId}`
 const openWindows = new Map<string, BrowserWindow>()
 const pendingWindows = new Set<string>()
+const injectedCssKeys = new Map<string, string>()
+
+interface OpenAppWindowOptions {
+  onClosed?: (appId: string) => void
+}
 
 export function getWindowKey(appId: string, profileId: string): string {
   return `${appId}::${profileId}`
@@ -17,7 +23,7 @@ export function getSessionPartition(appId: string, profileId: string): string {
   return `persist:${appId}-${profileId}`
 }
 
-export async function openAppWindow(appEntry: App, profile: Profile): Promise<void> {
+export async function openAppWindow(appEntry: App, profile: Profile, options: OpenAppWindowOptions = {}): Promise<void> {
   const key = getWindowKey(appEntry.id, profile.id)
 
   // Focus if already open
@@ -39,7 +45,7 @@ export async function openAppWindow(appEntry: App, profile: Profile): Promise<vo
 
     // Set up ad blocking for this session
     if (settings.blockAds) {
-      await setupAdblocker(sess)
+      setupRequestFilter(sess)
     }
 
     // Proxy
@@ -71,6 +77,7 @@ export async function openAppWindow(appEntry: App, profile: Profile): Promise<vo
         nodeIntegration: false,
         contextIsolation: true,
         session: sess,
+        sandbox: true,
         preload: path.join(__dirname, '../preload/app-preload.js'),
       },
     })
@@ -85,21 +92,29 @@ export async function openAppWindow(appEntry: App, profile: Profile): Promise<vo
       return { action: 'deny' }
     })
 
+    let closeNotified = false
+    const handleWindowClosed = () => {
+      if (closeNotified) return
+      closeNotified = true
+      openWindows.delete(key)
+      injectedCssKeys.delete(key)
+      options.onClosed?.(appEntry.id)
+    }
+
     // Save window position on close
     win.on('close', () => {
-      if (!win.isDestroyed()) {
-        const [width, height] = win.getSize()
-        const [x, y] = win.getPosition()
-        saveWindowState(key, { x, y, width, height })
-      }
-      openWindows.delete(key)
+      persistWindowBounds(win, saveWindowState, key)
     })
+
+    win.on('closed', handleWindowClosed)
 
     // Ensure cleanup on crash
     win.webContents.on('render-process-gone', () => {
       console.warn(`[window-manager] Render process gone for ${key}`)
-      win.close()
-      openWindows.delete(key)
+      handleWindowClosed()
+      if (!win.isDestroyed()) {
+        win.close()
+      }
     })
 
     win.webContents.on('unresponsive', () => {
@@ -116,7 +131,8 @@ export async function openAppWindow(appEntry: App, profile: Profile): Promise<vo
 
       // Custom CSS
       if (settings.customCss) {
-        win.webContents.insertCSS(settings.customCss).catch(console.error)
+        const cssKey = await win.webContents.insertCSS(settings.customCss)
+        injectedCssKeys.set(key, cssKey)
       }
 
       // Custom JS
@@ -177,11 +193,8 @@ export async function reloadAppSettings(appId: string): Promise<void> {
       win.webContents.setZoomFactor(settings.zoomLevel)
 
       // 2. Ad blocking
-      const sess = win.webContents.session
       if (settings.blockAds) {
-        await setupAdblocker(sess)
-      } else {
-        disableAdblocker(sess)
+        setupRequestFilter(win.webContents.session)
       }
 
       // 3. Dark Mode
@@ -193,9 +206,16 @@ export async function reloadAppSettings(appId: string): Promise<void> {
         win.webContents.send('dark-mode-disable')
       }
 
-      // 4. Custom CSS/JS (Only reapplied, doesn't remove old ones easily without reload)
+      // 4. Custom CSS
+      const cssKey = injectedCssKeys.get(key)
+      if (cssKey) {
+        await win.webContents.removeInsertedCSS(cssKey).catch(console.error)
+        injectedCssKeys.delete(key)
+      }
+
       if (settings.customCss) {
-        win.webContents.insertCSS(settings.customCss).catch(console.error)
+        const nextCssKey = await win.webContents.insertCSS(settings.customCss)
+        injectedCssKeys.set(key, nextCssKey)
       }
     }
   }
