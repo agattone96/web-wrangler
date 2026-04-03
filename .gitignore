@@ -18,3 +18,4 @@ coverage/
 
 .vite/
 .electron-cache/
+gh_completion.zsh
