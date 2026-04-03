@@ -17,6 +17,11 @@ interface OpenAppWindowOptions {
 }
 
 function applyPermissionPolicy(sess: Electron.Session, key: string): void {
+  sess.setPermissionCheckHandler((_webContents, permission, requestingOrigin) => {
+    console.warn(`[window-manager] Denied permission check "${permission}" for ${key} from ${requestingOrigin}`)
+    return false
+  })
+
   sess.setPermissionRequestHandler((_webContents, permission, callback, details) => {
     const requestingUrl = details?.requestingUrl ?? 'unknown'
     console.warn(`[window-manager] Denied permission "${permission}" for ${key} from ${requestingUrl}`)

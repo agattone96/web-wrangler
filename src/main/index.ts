@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, protocol, net, session } from 'electron'
+import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, protocol, net, session, shell } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import { v4 as uuid } from 'uuid'
@@ -18,7 +18,7 @@ import storeRaw from './store'
 import { getMainWindowState, persistWindowBounds } from './window-state'
 import { getAppSettingsUpdateResult } from './app-settings-runtime'
 import { shouldCreateTray, shouldDestroyTray } from './tray-state'
-import { assertValidAppUrl } from './url-policy'
+import { assertValidAppUrl, getSafeExternalUrl } from './url-policy'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const store: any = storeRaw
@@ -124,6 +124,27 @@ function createMainWindow(): void {
   mainWindow.once('ready-to-show', () => {
     console.log('[Main] Window ready to show')
     mainWindow!.show()
+  })
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const isAllowed =
+      (isDev && url.startsWith('http://127.0.0.1:5173')) ||
+      url.startsWith('app://')
+
+    if (!isAllowed) {
+      event.preventDefault()
+      console.warn(`[Main] Blocked renderer navigation to: ${url}`)
+    }
+  })
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    const safeExternalUrl = getSafeExternalUrl(url)
+    if (safeExternalUrl) {
+      shell.openExternal(safeExternalUrl)
+    } else {
+      console.warn(`[Main] Blocked external renderer URL: ${url}`)
+    }
+    return { action: 'deny' }
   })
 
   mainWindow.webContents.on('did-fail-load', (e, errorCode, errorDescription) => {
