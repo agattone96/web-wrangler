@@ -99,7 +99,7 @@ function createMainWindow(): void {
   })
 
   // Set App Name & Dock Icon for Mac
-  if (process.platform === 'darwin') {
+  if (process.platform === 'darwin' && app.dock) {
     const iconPath = path.join(__dirname, isDev ? '../../../assets/icon.png' : '../assets/icon.png')
     if (fs.existsSync(iconPath)) {
       const image = nativeImage.createFromPath(iconPath)
