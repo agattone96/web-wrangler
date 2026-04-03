@@ -5,7 +5,7 @@ import { getAppSettings, getWindowState, saveWindowState } from './db'
 import { App, Profile, WindowState } from '../shared/types'
 import { disableAdblocker, setupAdblocker } from './adblocker'
 import { persistWindowBounds } from './window-state'
-import { assertValidAppUrl, getSafeExternalUrl } from './url-policy'
+import { assertValidAppUrl, getSafeExternalUrl, shouldAllowPermission } from './url-policy'
 
 // track open windows: key = `${appId}::${profileId}`
 const openWindows = new Map<string, BrowserWindow>()
@@ -18,14 +18,20 @@ interface OpenAppWindowOptions {
 
 function applyPermissionPolicy(sess: Electron.Session, key: string): void {
   sess.setPermissionCheckHandler((_webContents, permission, requestingOrigin) => {
-    console.warn(`[window-manager] Denied permission check "${permission}" for ${key} from ${requestingOrigin}`)
-    return false
+    const allowed = shouldAllowPermission()
+    if (!allowed) {
+      console.warn(`[window-manager] Denied permission check "${permission}" for ${key} from ${requestingOrigin}`)
+    }
+    return allowed
   })
 
   sess.setPermissionRequestHandler((_webContents, permission, callback, details) => {
     const requestingUrl = details?.requestingUrl ?? 'unknown'
-    console.warn(`[window-manager] Denied permission "${permission}" for ${key} from ${requestingUrl}`)
-    callback(false)
+    const allowed = shouldAllowPermission()
+    if (!allowed) {
+      console.warn(`[window-manager] Denied permission "${permission}" for ${key} from ${requestingUrl}`)
+    }
+    callback(allowed)
   })
 }
 

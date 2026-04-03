@@ -18,7 +18,7 @@ import storeRaw from './store'
 import { getMainWindowState, persistWindowBounds } from './window-state'
 import { getAppSettingsUpdateResult } from './app-settings-runtime'
 import { shouldCreateTray, shouldDestroyTray } from './tray-state'
-import { assertValidAppUrl, getSafeExternalUrl } from './url-policy'
+import { assertValidAppUrl, getSafeExternalUrl, isAllowedRendererUrl } from './url-policy'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const store: any = storeRaw
@@ -127,11 +127,7 @@ function createMainWindow(): void {
   })
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
-    const isAllowed =
-      (isDev && url.startsWith('http://127.0.0.1:5173')) ||
-      url.startsWith('app://')
-
-    if (!isAllowed) {
+    if (!isAllowedRendererUrl(url, isDev)) {
       event.preventDefault()
       console.warn(`[Main] Blocked renderer navigation to: ${url}`)
     }

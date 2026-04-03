@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { assertValidAppUrl, getSafeExternalUrl } from '../main/url-policy'
+import {
+  assertValidAppUrl,
+  getSafeExternalUrl,
+  isAllowedRendererUrl,
+  shouldAllowPermission,
+} from '../main/url-policy'
 
 describe('url-policy', () => {
   it('accepts https app urls', () => {
@@ -16,5 +21,16 @@ describe('url-policy', () => {
     expect(getSafeExternalUrl('mailto:test@example.com')).toBe('mailto:test@example.com')
     expect(getSafeExternalUrl('javascript:alert(1)')).toBeNull()
     expect(getSafeExternalUrl('file:///tmp/test')).toBeNull()
+  })
+
+  it('allows only approved renderer origins', () => {
+    expect(isAllowedRendererUrl('app://index.html', false)).toBe(true)
+    expect(isAllowedRendererUrl('http://127.0.0.1:5173', true)).toBe(true)
+    expect(isAllowedRendererUrl('https://example.com', true)).toBe(false)
+    expect(isAllowedRendererUrl('http://127.0.0.1:5173', false)).toBe(false)
+  })
+
+  it('denies permissions by default', () => {
+    expect(shouldAllowPermission()).toBe(false)
   })
 })

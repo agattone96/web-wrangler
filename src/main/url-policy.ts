@@ -29,3 +29,11 @@ export function getSafeExternalUrl(raw: string): string | null {
   }
   return url.toString()
 }
+
+export function isAllowedRendererUrl(raw: string, isDev: boolean): boolean {
+  return (isDev && raw.startsWith('http://127.0.0.1:5173')) || raw.startsWith('app://')
+}
+
+export function shouldAllowPermission(): boolean {
+  return false
+}
