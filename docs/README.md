@@ -8,6 +8,7 @@ This documentation set was generated from the current repository contents and ac
 - `docs/product/scope-and-non-goals.md`: normative scope boundaries and deferred work.
 - `docs/product/onboarding-and-permission-flow.md`: normative first-run, setup, and permission/setting behavior.
 - `docs/security/trust-model.md`: normative trust boundaries, sensitive data handling, and abuse/failure cases.
+- `docs/security/security-hardening-execution-plan.md`: implementation-ready task and milestone plan for security remediation work.
 - `docs/engineering/architecture.md`: normative implementation architecture and critical flows.
 - `docs/engineering/data-model-and-normalization.md`: normative persisted entities, relationships, and normalization rules.
 - `docs/engineering/engineering-constraints.md`: normative implementation constraints derived from code, build, and security posture.
