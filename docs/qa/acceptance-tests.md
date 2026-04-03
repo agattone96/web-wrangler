@@ -244,12 +244,34 @@ Pass:
 
 - Inline error is shown.
 - No app record is created.
+- Inputs that bypass renderer checks are still rejected by the main process if they are malformed or unsupported.
 
 Fail:
 
 - Invalid app is persisted or no feedback is given.
 
-### AT-12 Deleting Non-Default Space Reassigns Apps
+### AT-12 Non-HTTPS App URL Is Rejected At The Main-Process Boundary
+
+Requirement mapping:
+
+- Security hardening task 1, main-process URL policy
+
+Steps:
+
+1. Attempt to create or update an app with `http://example.com`, `file:///tmp/test.html`, or `javascript:alert(1)`.
+2. Repeat through any path that reaches the install or update IPC handlers.
+
+Pass:
+
+- The operation is rejected.
+- No unsupported URL is persisted.
+- Existing valid apps remain unaffected.
+
+Fail:
+
+- A non-HTTPS URL reaches persistence or guest-window launch.
+
+### AT-13 Deleting Non-Default Space Reassigns Apps
 
 Requirement mapping:
 
@@ -270,7 +292,7 @@ Fail:
 
 - App is orphaned, deleted, or assigned to an invalid space.
 
-### AT-11 Default Space Cannot Be Deleted
+### AT-14 Default Space Cannot Be Deleted
 
 Requirement mapping:
 
@@ -291,7 +313,7 @@ Fail:
 
 ## Permission Failure Tests
 
-### AT-12 Unauthorized IPC Calls Are Rejected
+### AT-15 Unauthorized IPC Calls Are Rejected
 
 Requirement mapping:
 
@@ -309,7 +331,7 @@ Fail:
 
 - Unauthorized origin can mutate or read privileged state.
 
-### AT-13 Guest Website Permission Requests Follow Explicitly Documented Behavior
+### AT-16 Guest Website Permission Requests Follow Explicitly Documented Behavior
 
 Requirement mapping:
 
@@ -322,15 +344,36 @@ Steps:
 
 Pass:
 
-- Observed behavior matches the current documented statement: no app-specific mediation is implemented, and handling follows Electron/site defaults unless future code changes this.
+- Observed behavior matches the documented application policy: guest-session permission requests are denied by default unless an explicit allowlist is introduced later.
 
 Fail:
 
-- Product docs claim a mediated flow that does not exist, or runtime behavior has changed without docs being updated.
+- Product docs claim different behavior than the active session policy.
+
+### AT-17 External Popup Scheme Allowlist Is Enforced
+
+Requirement mapping:
+
+- Security hardening task 2, external navigation allowlist
+
+Steps:
+
+1. Open a guest app window.
+2. Trigger a popup or `window.open` to an `https:` URL.
+3. Trigger a popup or `window.open` to a disallowed scheme such as `javascript:` or `file:`.
+
+Pass:
+
+- Allowed `https:` URLs open in the system browser.
+- Disallowed schemes are denied and do not launch an external handler.
+
+Fail:
+
+- A raw unvalidated popup URL is forwarded directly to the OS.
 
 ## Data Integrity Tests
 
-### AT-14 Delete App Cascades Dependent Records
+### AT-18 Delete App Cascades Dependent Records
 
 Requirement mapping:
 
@@ -351,7 +394,7 @@ Fail:
 
 - Orphaned profiles or settings remain.
 
-### AT-15 Last Opened Apps Restore After Restart
+### AT-19 Last Opened Apps Restore After Restart
 
 Requirement mapping:
 
@@ -373,7 +416,7 @@ Fail:
 
 ## Regression / Contradiction Checks
 
-### AT-16 Ad-Blocking Documentation Matches Runtime
+### AT-20 Ad-Blocking Documentation Matches Runtime
 
 Requirement mapping:
 
@@ -392,7 +435,7 @@ Fail:
 
 - Normative docs still claim Ghostery-backed runtime blocking without code support.
 
-### AT-17 Dormant Settings Are Not Presented As Enforced
+### AT-21 Dormant Settings Are Not Presented As Enforced
 
 Requirement mapping:
 
@@ -413,7 +456,7 @@ Fail:
 
 ## Environment / Platform Checks
 
-### AT-18 Verification Pipeline Passes
+### AT-22 Verification Pipeline Passes
 
 Requirement mapping:
 

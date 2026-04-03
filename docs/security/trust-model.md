@@ -35,7 +35,7 @@ Every installed website loaded into a guest window is untrusted application cont
 - Read and mutate their own session storage/cookies within the assigned partition
 - Attempt popups or external navigation
 
-The application constrains this boundary by disabling `nodeIntegration`, enabling `contextIsolation`, using a sandboxed `BrowserWindow`, and forcing `window.open` URLs to the external system browser.
+The application constrains this boundary by disabling `nodeIntegration`, enabling `contextIsolation`, using a sandboxed `BrowserWindow`, forcing `window.open` URLs through a scheme allowlist before external handoff, and denying session permission requests by default.
 
 ### Local Persistence Boundary
 
@@ -66,7 +66,7 @@ The SQLite database, Electron store data, cached favicons, and session partition
 Trusted:
 
 - Bundled application code
-- Values read from local SQLite and Electron store, subject to data integrity of local disk
+- Values read from local SQLite and Electron store, subject to data integrity of local disk and runtime revalidation before privileged use
 
 Untrusted:
 
@@ -77,7 +77,7 @@ Untrusted:
 
 ## Ingestion Assumptions
 
-- URL normalization and syntax validation happen in renderer before install, but main process does not independently revalidate all fields; this is a trust gap worth preserving in documentation.
+- Renderer normalization improves UX, but the main process is the actual security boundary and independently validates app URLs before install, update, icon fetch, and guest-window load.
 - Favicon fetches come from remote app domains and are not guaranteed safe beyond how the helper stores them locally.
 - Catalog entries are seeded from local code, not downloaded at runtime.
 
@@ -112,7 +112,7 @@ Not guaranteed:
 
 ## Abuse And Failure Cases
 
-- Malicious website content could exploit the expanded attack surface of `executeJavaScript`, custom injected JS, or weak CSP in the dashboard renderer.
+- Malicious website content could exploit the expanded attack surface of `executeJavaScript` or custom injected JS in guest windows.
 - Incorrect or malicious proxy URLs can reroute guest traffic unexpectedly.
 - Static request filtering may block legitimate site functionality or fail to block trackers not on the hard-coded domain list.
 - Stored but unenforced security settings can cause users to assume protections exist when they do not.
@@ -123,9 +123,9 @@ Not guaranteed:
 - The project is local-first; there is no first-party backend or telemetry pipeline in evidence.
 - Privacy claims should be constrained to "local persistence and no project-defined backend" rather than "comprehensive privacy guarantees."
 - The stored app-lock PIN is persisted in plain application settings form; no hashing or secure enclave integration is present in the repository.
-- Main renderer CSP currently allows `'unsafe-inline'` and `'unsafe-eval'`, which should be documented as an implementation constraint, not a best-practice posture.
+- The dashboard renderer uses a scoped CSP: development keeps narrow Vite-specific exceptions, while packaged builds use a stricter local-asset policy.
 
 ## Needs Confirmation
 
-- Whether website notification, camera, microphone, and clipboard permission requests should be intercepted or delegated entirely to Electron defaults.
+- Which guest-site permissions, if any, should eventually be allowlisted instead of denied by default.
 - Whether favicons are stored as files under user data or another application path; the current architecture relies on a helper not documented elsewhere.

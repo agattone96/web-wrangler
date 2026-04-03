@@ -18,6 +18,7 @@ import storeRaw from './store'
 import { getMainWindowState, persistWindowBounds } from './window-state'
 import { getAppSettingsUpdateResult } from './app-settings-runtime'
 import { shouldCreateTray, shouldDestroyTray } from './tray-state'
+import { assertValidAppUrl } from './url-policy'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const store: any = storeRaw
@@ -274,11 +275,12 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC.INSTALL_APP, async (e, data: InstallAppInput) => {
     if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    const validatedUrl = assertValidAppUrl(data.url)
     const id = uuid()
     const appEntry: App = {
       id,
       name: data.name,
-      url: data.url,
+      url: validatedUrl.toString(),
       iconPath: null,
       spaceId: data.spaceId ?? 'default',
       createdAt: Date.now(),
@@ -291,7 +293,7 @@ function registerIpcHandlers(): void {
     })
 
     // Auto-fetch favicon in background
-    fetchFavicon(data.url, id).then((iconPath) => {
+    fetchFavicon(validatedUrl.toString(), id).then((iconPath) => {
       if (iconPath) updateApp(id, { iconPath })
     })
 
@@ -315,6 +317,9 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC.UPDATE_APP, (e, id: string, data: Parameters<typeof updateApp>[1]) => {
     if (!validateSender(e)) throw new Error('Unauthorized IPC call')
+    if (data.url !== undefined) {
+      data = { ...data, url: assertValidAppUrl(data.url).toString() }
+    }
     return updateApp(id, data)
   })
 
@@ -330,7 +335,7 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC.FETCH_ICON, async (e, url: string, appId: string) => {
     if (!validateSender(e)) throw new Error('Unauthorized IPC call')
-    return fetchFavicon(url, appId)
+    return fetchFavicon(assertValidAppUrl(url).toString(), appId)
   })
 
   // Profiles
@@ -433,17 +438,43 @@ function registerIpcHandlers(): void {
 
 function setupCsp(): void {
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    const isRendererResponse =
+      details.url.startsWith('http://127.0.0.1:5173') ||
+      details.url.startsWith('app://')
+
+    if (!isRendererResponse) {
+      callback({ responseHeaders: details.responseHeaders })
+      return
+    }
+
+    const rendererCsp = isDev
+      ? [
+          "default-src 'self' http://127.0.0.1:5173 ws://127.0.0.1:5173",
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://127.0.0.1:5173",
+          "connect-src 'self' http://127.0.0.1:5173 ws://127.0.0.1:5173",
+          "img-src 'self' data: app: https: file:",
+          "style-src 'self' 'unsafe-inline' http://127.0.0.1:5173 https://fonts.googleapis.com",
+          "font-src 'self' https://fonts.gstatic.com data:",
+          "object-src 'none'",
+          "base-uri 'none'",
+          "frame-ancestors 'none'",
+        ].join('; ')
+      : [
+          "default-src 'self' app:",
+          "script-src 'self'",
+          "connect-src 'self'",
+          "img-src 'self' data: app: https: file:",
+          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+          "font-src 'self' https://fonts.gstatic.com data:",
+          "object-src 'none'",
+          "base-uri 'none'",
+          "frame-ancestors 'none'",
+        ].join('; ')
+
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': [
-          "default-src 'self' 'unsafe-inline' data: app:; " +
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; " +
-          "connect-src 'self' https: wss:; " +
-          "img-src 'self' data: https: file:; " +
-          "style-src 'self' 'unsafe-inline' https:; " +
-          "font-src 'self' https: data:;"
-        ]
+        'Content-Security-Policy': [rendererCsp]
       }
     })
   })

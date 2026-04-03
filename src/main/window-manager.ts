@@ -5,6 +5,7 @@ import { getAppSettings, getWindowState, saveWindowState } from './db'
 import { App, Profile, WindowState } from '../shared/types'
 import { disableAdblocker, setupAdblocker } from './adblocker'
 import { persistWindowBounds } from './window-state'
+import { assertValidAppUrl, getSafeExternalUrl } from './url-policy'
 
 // track open windows: key = `${appId}::${profileId}`
 const openWindows = new Map<string, BrowserWindow>()
@@ -13,6 +14,14 @@ const injectedCssKeys = new Map<string, string>()
 
 interface OpenAppWindowOptions {
   onClosed?: (appId: string) => void
+}
+
+function applyPermissionPolicy(sess: Electron.Session, key: string): void {
+  sess.setPermissionRequestHandler((_webContents, permission, callback, details) => {
+    const requestingUrl = details?.requestingUrl ?? 'unknown'
+    console.warn(`[window-manager] Denied permission "${permission}" for ${key} from ${requestingUrl}`)
+    callback(false)
+  })
 }
 
 export function getWindowKey(appId: string, profileId: string): string {
@@ -42,6 +51,7 @@ export async function openAppWindow(appEntry: App, profile: Profile, options: Op
     const settings = getAppSettings(appEntry.id)
     const partition = getSessionPartition(appEntry.id, profile.id)
     const sess = session.fromPartition(partition, { cache: true })
+    applyPermissionPolicy(sess, key)
 
     // Set up ad blocking for this session
     if (settings.blockAds) {
@@ -88,7 +98,12 @@ export async function openAppWindow(appEntry: App, profile: Profile, options: Op
 
     // Open external links in the default browser
     win.webContents.setWindowOpenHandler(({ url }) => {
-      shell.openExternal(url)
+      const safeExternalUrl = getSafeExternalUrl(url)
+      if (safeExternalUrl) {
+        shell.openExternal(safeExternalUrl)
+      } else {
+        console.warn(`[window-manager] Blocked external URL for ${key}: ${url}`)
+      }
       return { action: 'deny' }
     })
 
@@ -149,7 +164,7 @@ export async function openAppWindow(appEntry: App, profile: Profile, options: Op
     })
 
     openWindows.set(key, win)
-    await win.loadURL(appEntry.url)
+    await win.loadURL(assertValidAppUrl(appEntry.url).toString())
   } catch (err) {
     console.error(`[window-manager] Failed to open window for app ${appEntry.id}:`, err)
   } finally {
