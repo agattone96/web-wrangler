@@ -11,6 +11,7 @@ This documentation set was generated from the current repository contents and ac
 - `docs/engineering/architecture.md`: normative implementation architecture and critical flows.
 - `docs/engineering/data-model-and-normalization.md`: normative persisted entities, relationships, and normalization rules.
 - `docs/engineering/engineering-constraints.md`: normative implementation constraints derived from code, build, and security posture.
+- `docs/engineering/implementation-gap-remediation-plan.md`: implementation-ready patch plan for closing claimed-vs-implemented feature drift.
 - `docs/qa/acceptance-tests.md`: normative acceptance criteria and regression checks.
 
 ## Source Basis
