@@ -50,7 +50,6 @@ The application exposes optional settings that influence runtime behavior but ar
 - Global ad-block default
 - Per-app proxy URL
 - Per-app custom CSS and custom JavaScript
-- Stored app-lock configuration
 
 These are user settings, not operating-system permissions.
 

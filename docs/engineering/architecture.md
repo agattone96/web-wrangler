@@ -19,7 +19,8 @@ Key modules:
 - [`src/main/index.ts`](/Users/allisongattone/web-wrangler/src/main/index.ts): app bootstrap, IPC handlers, menu, tray, CSP, single-instance lock
 - [`src/main/db.ts`](/Users/allisongattone/web-wrangler/src/main/db.ts): SQLite schema, migrations, seed data, persistence helpers
 - [`src/main/window-manager.ts`](/Users/allisongattone/web-wrangler/src/main/window-manager.ts): guest-window lifecycle and per-window runtime settings
-- [`src/main/request-filter.ts`](/Users/allisongattone/web-wrangler/src/main/request-filter.ts): static tracker/ad domain filter
+- [`src/main/adblocker.ts`](/Users/allisongattone/web-wrangler/src/main/adblocker.ts): Ghostery-backed guest-session blocker with static-filter fallback
+- [`src/main/request-filter.ts`](/Users/allisongattone/web-wrangler/src/main/request-filter.ts): static tracker/ad domain fallback filter
 - [`src/main/app-settings-runtime.ts`](/Users/allisongattone/web-wrangler/src/main/app-settings-runtime.ts): classification of live vs reopen-required settings
 - [`src/main/store.ts`](/Users/allisongattone/web-wrangler/src/main/store.ts): Electron-store persistence for last opened app sessions
 
@@ -82,7 +83,7 @@ Key modules:
 ### App Startup
 
 1. Acquire single-instance lock.
-2. On `app.whenReady()`, initialize DB, IPC, custom protocol, CSP, request filtering, menu, and main window.
+2. On `app.whenReady()`, initialize DB, IPC, custom protocol, CSP, menu, and main window.
 3. Restore last-opened app windows from Electron store.
 4. Reconcile tray state from global settings.
 
@@ -101,10 +102,6 @@ Key modules:
 - Remote favicon sources fetched through the app.
 - DarkReader JS bundled locally and injected into guest pages.
 
-Present but inactive integration:
-
-- Ghostery ad blocker module exists but is not currently wired into the main application flow.
-
 ## Critical Operation Sequences
 
 ### Sequence: Guest Window Creation
@@ -112,7 +109,7 @@ Present but inactive integration:
 1. Resolve app/profile.
 2. Build session partition as `persist:${appId}-${profileId}`.
 3. Create sandboxed guest window with `app-preload.js`.
-4. Optionally apply static request filtering and proxy/user agent settings.
+4. Optionally enable Ghostery-backed blocking for the guest session, with static filtering as fallback, plus proxy/user agent settings.
 5. Load guest URL.
 6. On finish, apply zoom, DarkReader, custom CSS, and custom JS.
 

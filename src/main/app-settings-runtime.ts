@@ -10,11 +10,11 @@ export interface AppSettingsUpdateResult {
 const LIVE_FIELDS: Array<keyof Omit<AppSettings, 'appId'>> = [
   'zoomLevel',
   'darkMode',
+  'blockAds',
   'customCss',
 ]
 
 const REOPEN_REQUIRED_FIELDS: Array<keyof Omit<AppSettings, 'appId'>> = [
-  'blockAds',
   'customJs',
   'userAgent',
   'openAtLogin',

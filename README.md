@@ -9,7 +9,7 @@
 - **Dedicated App Catalog**: A pre-seeded collection of popular web apps (Gmail, Slack, Notion, etc.) ready to be "wrangled" into your workspace.
 - **Neon Cyber-Goth UI**: A custom-engineered design system featuring glassmorphism, pulsing neon glows, and micro-animations.
 - **Privacy First**: 
-  - Integrated **native ad-blocking** via the Ghostery engine.
+  - Integrated guest-window **ad and tracker blocking**.
   - **Universal Dark Mode** support for all guest applications using a bundled DarkReader injection system.
   - Complete local data persistence via **SQLite**.
 - **Performance Optimized**: Built on **Electron** + **Vite** + **TypeScript** for near-instant load times and zero-latency interactions.
@@ -20,7 +20,7 @@
 - **Core**: Electron, React, TypeScript
 - **Styling**: Vanilla CSS (Custom Design System)
 - **Database**: better-sqlite3
-- **Ad-blocking**: @ghostery/adblocker-electron
+- **Ad-blocking**: @ghostery/adblocker-electron with static-filter fallback
 - **Dark Mode**: localized darkreader injection
 - **Build Tools**: Vite, tsc, electron-builder
 

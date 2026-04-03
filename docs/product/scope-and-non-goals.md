@@ -31,7 +31,6 @@ The repository contains signs of intended or partially designed features that ar
 - Enforced app lock with PIN and lock timeout.
 - Open-at-login OS integration.
 - App-level notification permission enforcement.
-- Ghostery-backed filtering as the active ad-block runtime path.
 - Explicit permission orchestration for camera, microphone, or system notifications.
 
 ## Boundary Conditions
@@ -46,7 +45,6 @@ The repository contains signs of intended or partially designed features that ar
 Inferred from stored settings, dependencies, and current gaps:
 
 - Wiring stored app-lock settings into a real lock screen and unlock flow.
-- Replacing or supplementing the static request filter with the Ghostery integration already present in the codebase.
 - Implementing per-app notification/open-at-login behavior beyond persistence.
 - Defining explicit handling for website permission prompts and denial/retry flows.
 - Adding tests beyond the current narrow helper coverage.

@@ -14,10 +14,9 @@ export default function GlobalSettingsModal() {
   const [settings, setSettings] = useState<GlobalSettings | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [pinInput, setPinInput] = useState('')
 
   useEffect(() => {
-    window.api.getGlobalSettings().then((s) => { setSettings(s); setPinInput(s.lockPin) })
+    window.api.getGlobalSettings().then(setSettings)
   }, [])
 
   function patch<K extends keyof GlobalSettings>(key: K, value: GlobalSettings[K]) {
@@ -27,9 +26,8 @@ export default function GlobalSettingsModal() {
   async function save() {
     if (!settings) return
     setSaving(true)
-    const final = { ...settings, lockPin: pinInput }
-    await window.api.updateGlobalSettings(final)
-    setGlobalSettings(final)
+    await window.api.updateGlobalSettings(settings)
+    setGlobalSettings(settings)
     setSaving(false); setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -91,7 +89,7 @@ export default function GlobalSettingsModal() {
           <div className="setting-row">
             <div>
               <div className="setting-label">Dark Mode by Default</div>
-              <div className="setting-desc">New apps start in dark mode</div>
+              <div className="setting-desc">Default for new apps</div>
             </div>
             <label className="toggle">
               <input type="checkbox" checked={settings.darkModeGlobal} onChange={(e) => patch('darkModeGlobal', e.target.checked)} />
@@ -115,46 +113,6 @@ export default function GlobalSettingsModal() {
             </div>
           </div>
 
-          <div className="sep" style={{ margin: '16px 0' }} />
-
-          {/* App Lock */}
-          <p className="gs-section-label">App Lock</p>
-          <div className="setting-row">
-            <div>
-              <div className="setting-label">Enable App Lock</div>
-              <div className="setting-desc">Require PIN to open WebWrangler</div>
-            </div>
-            <label className="toggle">
-              <input type="checkbox" checked={settings.enableAppLock} onChange={(e) => patch('enableAppLock', e.target.checked)} />
-              <div className="toggle-track" />
-            </label>
-          </div>
-          {settings.enableAppLock && (
-            <>
-              <div className="sep" />
-              <div className="input-group">
-                <label>PIN</label>
-                <input
-                  className="input"
-                  type="password"
-                  placeholder="4-digit PIN"
-                  maxLength={6}
-                  value={pinInput}
-                  onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
-                />
-              </div>
-              <div className="sep" />
-              <div className="input-group">
-                <label>Lock Timeout: {settings.lockTimeout === 0 ? 'Immediately' : `${settings.lockTimeout} min`}</label>
-                <input
-                  type="range" min="0" max="60" step="5"
-                  value={settings.lockTimeout}
-                  onChange={(e) => patch('lockTimeout', parseInt(e.target.value))}
-                  className="zoom-slider"
-                />
-              </div>
-            </>
-          )}
         </div>
 
         <div className="modal-footer">

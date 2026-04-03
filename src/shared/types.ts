@@ -131,7 +131,6 @@ export const IPC = {
 
   // Catalog
   LIST_CATALOG: 'catalog:list',
-  SEARCH_CATALOG: 'catalog:search',
 
   // Events (main → renderer)
   APP_OPENED: 'event:app-opened',

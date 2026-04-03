@@ -57,6 +57,21 @@
   --transition-slow:    450ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+:root[data-theme='light'] {
+  --color-bg: #f6eef8;
+  --color-surface: rgba(255, 255, 255, 0.85);
+  --color-surface-2: rgba(255, 255, 255, 0.72);
+  --color-surface-3: rgba(247, 232, 252, 0.92);
+  --color-border: rgba(155, 33, 123, 0.18);
+  --color-border-vivid: rgba(155, 33, 123, 0.38);
+  --color-text: #261729;
+  --color-text-muted: #7b4d73;
+  --color-text-dim: #9b7298;
+  --glow-pink-sm: 0 0 8px rgba(255, 0, 127, 0.18), 0 0 20px rgba(255, 0, 127, 0.08);
+  --glow-pink: 0 0 15px rgba(255, 0, 127, 0.28), 0 0 35px rgba(255, 0, 127, 0.12);
+  --glow-deep: 0 0 50px rgba(255, 0, 127, 0.06);
+}
+
 /* ─── Reset ─────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -92,6 +107,10 @@ body {
   position: relative;
   overflow: hidden;
   background: radial-gradient(circle at 50% -20%, #1a1020 0%, var(--color-bg) 100%);
+}
+
+:root[data-theme='light'] .app-shell {
+  background: radial-gradient(circle at 50% -20%, #ffe7f6 0%, var(--color-bg) 100%);
 }
 
 /* Faint ambient glow in background */

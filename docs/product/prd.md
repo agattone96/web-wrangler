@@ -102,11 +102,11 @@ The codebase supports the following measurable outcomes:
 - The system must preserve window bounds for the main window and guest app windows.
 - The system must validate IPC callers so only the trusted renderer origin can invoke main-process handlers.
 
-### Implemented But Partial
+### Deferred / Internal-Only
 
-- The system stores app lock configuration globally, but enforcement logic is not implemented. This is a persisted configuration surface, not a working lock gate.
-- The system stores per-app notification and open-at-login settings, but enforcement logic is not implemented in current runtime code.
-- The system offers ad/tracker blocking, but current implementation is a static request-domain filter rather than the Ghostery-backed blocker described in top-level prose.
+- The system stores app lock configuration globally, but enforcement logic is not implemented. This remains deferred configuration, not a shipped lock gate.
+- The system stores per-app notification and open-at-login settings, but those controls are not part of the shipped UI and have no enforcement path in current runtime code.
+- The system exposes `updateApp`, `updateProfile`, and `updateSpace` through preload and IPC, but there is no active renderer editing flow for those operations today.
 
 ### Unknown / Needs Confirmation
 
@@ -130,9 +130,6 @@ The codebase supports the following measurable outcomes:
 - electron-builder for packaging.
 - `uuid` for app/profile/space identifiers.
 - `darkreader` for forced dark mode injection.
-
-Present but not currently integrated into runtime flow:
-
 - `@ghostery/adblocker-electron`
 
 ## Out Of Scope References

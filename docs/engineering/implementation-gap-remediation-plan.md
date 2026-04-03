@@ -2,103 +2,103 @@
 
 ## Purpose
 
-This document converts the current repository drift between claimed capabilities and actual runtime behavior into a concrete patch plan that can be executed, reviewed, and tracked in GitHub.
+This document turns the current drift between product claims, stored settings, and actual runtime behavior into task-sized implementation work that can be executed in small PRs.
 
 Primary evidence:
 
 - [README.md](/Users/allisongattone/web-wrangler/README.md)
 - [docs/product/prd.md](/Users/allisongattone/web-wrangler/docs/product/prd.md)
+- [docs/product/scope-and-non-goals.md](/Users/allisongattone/web-wrangler/docs/product/scope-and-non-goals.md)
+- [docs/product/onboarding-and-permission-flow.md](/Users/allisongattone/web-wrangler/docs/product/onboarding-and-permission-flow.md)
+- [docs/engineering/architecture.md](/Users/allisongattone/web-wrangler/docs/engineering/architecture.md)
+- [docs/qa/acceptance-tests.md](/Users/allisongattone/web-wrangler/docs/qa/acceptance-tests.md)
 - [src/main/index.ts](/Users/allisongattone/web-wrangler/src/main/index.ts)
 - [src/main/window-manager.ts](/Users/allisongattone/web-wrangler/src/main/window-manager.ts)
 - [src/main/adblocker.ts](/Users/allisongattone/web-wrangler/src/main/adblocker.ts)
 - [src/main/request-filter.ts](/Users/allisongattone/web-wrangler/src/main/request-filter.ts)
 - [src/main/db.ts](/Users/allisongattone/web-wrangler/src/main/db.ts)
+- [src/main/app-settings-runtime.ts](/Users/allisongattone/web-wrangler/src/main/app-settings-runtime.ts)
+- [src/renderer/App.tsx](/Users/allisongattone/web-wrangler/src/renderer/App.tsx)
 - [src/renderer/components/GlobalSettingsModal.tsx](/Users/allisongattone/web-wrangler/src/renderer/components/GlobalSettingsModal.tsx)
 - [src/renderer/components/AppSettingsModal.tsx](/Users/allisongattone/web-wrangler/src/renderer/components/AppSettingsModal.tsx)
+- [src/renderer/index.css](/Users/allisongattone/web-wrangler/src/renderer/index.css)
 - [src/shared/types.ts](/Users/allisongattone/web-wrangler/src/shared/types.ts)
 
 ## Scope
 
-This plan covers features and functions that are currently one of:
+This plan covers implementation gaps that are currently one of:
 
-- claimed in docs or UI copy but not implemented
-- persisted in state/DB but not enforced at runtime
-- exposed through IPC/API but not wired to renderer flows
+- claimed in docs or UI but not enforced in runtime
+- stored in persistence but not applied in runtime behavior
+- exposed through IPC or shared types without an active user-facing flow
 
-This plan does not assume all gaps should be implemented. For some items, the correct fix is to remove or downgrade the claim.
+This plan does not treat every stored setting as a must-implement feature. Some gaps are better resolved by removing or downgrading the claim.
 
 ## Audit Summary
 
-The current gaps fall into three categories:
+The current repository gaps fall into three groups:
 
 1. Product claims that exceed runtime behavior
 2. Stored settings that have no enforcement path
-3. Exposed API surfaces with no active UI workflow
+3. Exposed API surface with no active UI flow
 
-Confirmed gaps:
+Confirmed mismatches:
 
-- Ghostery-backed ad blocking is claimed, but runtime uses a static request filter
-- App lock settings exist, but there is no lock/unlock flow
-- Lock timeout is stored, but there is no inactivity enforcement
-- Global defaults for ad blocking and dark mode are claimed for new apps, but app creation does not read them
-- Theme is stored, but there is no renderer or native theme application
-- Per-app notifications are stored and surfaced, but there is no permission mediation or enforcement
-- Open-at-login exists in types/persistence, but there is no UI control and no OS integration
-- `updateApp`, `updateProfile`, and `updateSpace` are exposed through preload/IPC, but there is no current renderer edit flow
-- `SEARCH_CATALOG` is declared but unused
+- Ghostery-backed ad blocking is claimed, but active guest-window runtime still uses a static request filter.
+- App lock and lock timeout are stored, but there is no lock screen or timeout enforcement path.
+- Global ad-block and dark-mode defaults are described as defaults for new apps, but install flow does not apply them.
+- Theme is stored globally, but renderer theme state is never applied.
+- Per-app notifications are stored and shown in UI, but there is no permission mediation path.
+- Open-at-login is stored, but there is no active UI flow or OS integration.
+- `updateApp`, `updateProfile`, and `updateSpace` exist in preload/IPC without active renderer editing flows.
+- `SEARCH_CATALOG` exists in shared IPC constants but is unused.
 
 ## Decision Framework
 
-Each gap should be resolved using exactly one of these strategies:
+Each gap should resolve through exactly one strategy:
 
-### Strategy A: Implement
-
-Use this when the feature materially improves the product and the repo already contains enough design signal to support it safely.
-
-### Strategy B: De-scope
-
-Use this when the feature is not ready, creates trust/security ambiguity, or would expand scope beyond current product intent.
-
-### Strategy C: Preserve as internal-only
-
-Use this when the surface is useful for future work, but should not be exposed to users or represented as a shipped feature yet.
+- Implement: ship the behavior now because the repo already contains enough design signal.
+- De-scope: remove or hide the feature because the current repo cannot support it safely.
+- Preserve as internal-only: keep the storage or API surface, but stop representing it as shipped functionality.
 
 ## Recommended Product Decisions
 
-Recommended decisions for this repository state:
-
-| Gap | Recommended decision | Rationale |
+| Gap | Decision | Rationale |
 | --- | --- | --- |
-| Ghostery ad blocking | Implement | Existing dependency and helper already exist; user-facing claim already present |
-| App lock | De-scope now, implement later only with explicit UX | High trust and lifecycle complexity; current repo has no lock screen foundation |
-| Lock timeout | De-scope with app lock | No safe standalone value without real lock enforcement |
-| Global ad-block default | Implement | Small, low-risk, aligns with current settings model |
-| Global dark-mode default | Implement | Small, low-risk, aligns with current settings model |
-| Theme | Implement minimally or remove UI until implemented | Current control is misleading |
-| Notifications control | De-scope now or relabel as stored-only | Requires permission mediation design; current UI over-promises |
-| Open at login | De-scope now | OS-specific behavior and current UI is incomplete |
-| Edit IPC surfaces | Keep internal-only until UI exists | Not a user trust issue, but should not be described as an active feature |
-| `SEARCH_CATALOG` constant | Remove or wire to existing list query | Dead interface surface |
+| Ghostery guest-window blocking | Implement | Dependency and helper already exist |
+| App lock | De-scope for now | Security-sensitive and incomplete |
+| Lock timeout | De-scope with app lock | No safe standalone behavior |
+| Global ad-block default | Implement | Small, low-risk install-flow change |
+| Global dark-mode default | Implement | Small, low-risk install-flow change |
+| Theme | Implement | Stored setting should produce visible behavior |
+| Notifications control | De-scope for now | Currently misleading without mediation |
+| Open at login | De-scope for now | No UI flow or OS behavior |
+| Dormant edit IPC | Preserve as internal-only | Useful, but not user-facing today |
+| `SEARCH_CATALOG` | Remove | Dead constant |
 
-## Delivery Strategy
+## Task Milestones
 
-Implement this work in three tracks:
+### Task 1: Truth Alignment
 
-1. Truth-alignment patch
-2. Low-risk capability patch
-3. High-risk deferred feature cleanup
+**Goal**
 
-The truth-alignment patch should land first. It reduces user-facing drift immediately and lowers the chance of shipping more misleading behavior while implementation work is ongoing.
+Bring docs and visible settings UI back in line with actual runtime behavior.
 
-## Patch Sequence
+**Repo evidence**
 
-### Phase 0: Truth-Alignment Patch
+- [README.md](/Users/allisongattone/web-wrangler/README.md) still claims Ghostery-backed ad blocking.
+- [docs/product/prd.md](/Users/allisongattone/web-wrangler/docs/product/prd.md) still documents partial and dormant settings.
+- [src/renderer/components/GlobalSettingsModal.tsx](/Users/allisongattone/web-wrangler/src/renderer/components/GlobalSettingsModal.tsx) still shows app lock and “default for new apps” copy.
+- [src/renderer/components/AppSettingsModal.tsx](/Users/allisongattone/web-wrangler/src/renderer/components/AppSettingsModal.tsx) still shows notifications despite no enforcement path.
 
-Goal:
+**Milestones**
 
-- Make docs and UI accurately describe current behavior before deeper runtime changes land
+- Milestone 1.1: Record every misleading claim and map it to a concrete file.
+- Milestone 1.2: Rewrite product docs to describe current runtime truth.
+- Milestone 1.3: Hide or relabel trust-sensitive UI controls that do not work.
+- Milestone 1.4: Validate that users can no longer infer false shipped behavior from docs or settings UI.
 
-Files to update:
+**Files/subsystems touched**
 
 - [README.md](/Users/allisongattone/web-wrangler/README.md)
 - [docs/product/prd.md](/Users/allisongattone/web-wrangler/docs/product/prd.md)
@@ -107,462 +107,315 @@ Files to update:
 - [src/renderer/components/GlobalSettingsModal.tsx](/Users/allisongattone/web-wrangler/src/renderer/components/GlobalSettingsModal.tsx)
 - [src/renderer/components/AppSettingsModal.tsx](/Users/allisongattone/web-wrangler/src/renderer/components/AppSettingsModal.tsx)
 
-Changes:
+**Acceptance criteria**
 
-- Replace Ghostery-specific product wording with either:
-  - “tracker/ad blocking” until Ghostery wiring lands, or
-  - keep Ghostery wording only if Phase 1 ships in the same release
-- Add “stored only / not yet enforced” language for:
-  - app lock
-  - lock timeout
-  - notifications
-  - open at login
-- Remove or hide controls that are not intended to ship soon:
-  - app lock
-  - lock timeout
-  - theme
-  - notifications
-  - open at login
-- Remove the “default for new apps” wording unless Phase 2 ships in the same release
+- No user-facing copy claims Ghostery unless Ghostery is active for guest windows.
+- No visible settings control implies security, permission, or OS behavior that does not exist.
+- “Default for new apps” wording appears only after install flow supports it.
 
-Acceptance criteria:
-
-- No user-facing copy claims Ghostery unless Ghostery is active in runtime
-- No visible setting claims enforcement that the code does not perform
-- Documentation and UI language agree
-
-Risk:
-
-- Low
-
-Rollback:
-
-- Revert the copy-only/UI-hiding patch
-
-Validation commands:
+**Validation commands**
 
 ```bash
 npm run lint
-npm test
 npm run typecheck
+npm test
 npm run build
 ```
 
-Expected result:
+**Rollback note**
 
-- Build succeeds
-- Settings modals render without removed/deferred claims
+Revert the doc and settings-modal changes only.
 
-### Phase 1: Wire Ghostery as the Runtime Ad-Blocking Path
+**Dependencies on prior tasks**
 
-Goal:
+None.
 
-- Replace the current static request filter path with the Ghostery-backed blocker already present in the repository
+### Task 2: Ghostery Runtime Wiring
 
-Target files:
+**Goal**
+
+Replace the active guest-window static request filter path with the Ghostery-backed blocker.
+
+**Repo evidence**
+
+- [src/main/window-manager.ts](/Users/allisongattone/web-wrangler/src/main/window-manager.ts) currently calls `setupRequestFilter(sess)`.
+- [src/main/adblocker.ts](/Users/allisongattone/web-wrangler/src/main/adblocker.ts) already exposes `setupAdblocker` and `disableAdblocker`.
+- [src/main/index.ts](/Users/allisongattone/web-wrangler/src/main/index.ts) still applies the static filter to `session.defaultSession`.
+
+**Milestones**
+
+- Milestone 2.1: Keep Ghostery scoped to guest sessions, not the dashboard session.
+- Milestone 2.2: Replace guest-window startup blocking path with Ghostery.
+- Milestone 2.3: Add disable behavior for already-open guest windows.
+- Milestone 2.4: Keep the static filter only as fallback if Ghostery initialization fails.
+- Milestone 2.5: Update engineering and QA docs to describe the actual runtime path.
+
+**Files/subsystems touched**
 
 - [src/main/adblocker.ts](/Users/allisongattone/web-wrangler/src/main/adblocker.ts)
 - [src/main/window-manager.ts](/Users/allisongattone/web-wrangler/src/main/window-manager.ts)
-- [src/main/index.ts](/Users/allisongattone/web-wrangler/src/main/index.ts)
+- [src/main/app-settings-runtime.ts](/Users/allisongattone/web-wrangler/src/main/app-settings-runtime.ts)
 - [src/main/request-filter.ts](/Users/allisongattone/web-wrangler/src/main/request-filter.ts)
+- [src/main/index.ts](/Users/allisongattone/web-wrangler/src/main/index.ts)
 - [docs/engineering/architecture.md](/Users/allisongattone/web-wrangler/docs/engineering/architecture.md)
 - [docs/qa/acceptance-tests.md](/Users/allisongattone/web-wrangler/docs/qa/acceptance-tests.md)
 
-Implementation tasks:
+**Acceptance criteria**
 
-1. Change guest window startup to call `setupAdblocker(sess)` instead of `setupRequestFilter(sess)` when `settings.blockAds` is true.
-2. Decide whether `session.defaultSession` should receive Ghostery as well.
-   Current recommendation:
-   - do not enable on the main dashboard session unless there is a demonstrated need
-   - keep dashboard network behavior simpler than guest app behavior
-3. Add a disable path for toggling ad blocking off on already-open sessions.
-   Current `reloadAppSettings()` only enables filtering when true and does nothing when false.
-4. Keep [src/main/request-filter.ts](/Users/allisongattone/web-wrangler/src/main/request-filter.ts) only as:
-   - a fallback path if Ghostery initialization fails, or
-   - dead code to remove in a follow-up cleanup
-5. Update README and architecture docs to match the chosen runtime path exactly.
+- Newly opened guest app windows use Ghostery-backed blocking when `blockAds` is enabled.
+- Turning `blockAds` off for an already-open guest window disables Ghostery immediately.
+- Ghostery setup remains idempotent per session.
+- Static filtering is used only if Ghostery setup fails.
 
-Design notes:
-
-- Session-level blocker initialization should remain idempotent
-- Failed Ghostery initialization should log and optionally fall back to the existing static filter
-- The implementation should not register duplicate request handlers on repeated setting reloads
-
-Acceptance criteria:
-
-- Enabling `blockAds` activates Ghostery-backed session blocking for newly opened app windows
-- Disabling `blockAds` stops session blocking for already-open app windows or clearly requires reopen
-- README and architecture docs no longer contradict runtime behavior
-
-Risk:
-
-- Medium
-
-Rollback:
-
-- Revert Ghostery wiring and restore static filter path
-
-Validation:
+**Validation commands**
 
 ```bash
 npm run verify
 ```
 
-Manual validation:
+**Rollback note**
 
-1. Open a test site with obvious third-party trackers in a guest window.
-2. Confirm requests are blocked with ad blocking on.
-3. Disable ad blocking and confirm either:
-   - blocking stops live, or
-   - UI states that reopen is required and reopen restores unblocked behavior.
+Revert the Ghostery wiring and restore guest-window static filtering.
 
-### Phase 2: Make Global Defaults Actually Apply to New Apps
+**Dependencies on prior tasks**
 
-Goal:
+Task 1 should land first so public claims do not get ahead of the runtime change.
 
-- Honor `blockAdsGlobal` and `darkModeGlobal` during app installation
+### Task 3: Global Defaults Applied To New Apps
 
-Target files:
+**Goal**
+
+Make `blockAdsGlobal` and `darkModeGlobal` apply during install flow for newly created apps.
+
+**Repo evidence**
+
+- [src/main/index.ts](/Users/allisongattone/web-wrangler/src/main/index.ts) installs apps without reading global settings.
+- [src/main/db.ts](/Users/allisongattone/web-wrangler/src/main/db.ts) inserts default app settings rows with schema defaults only.
+- [src/renderer/components/GlobalSettingsModal.tsx](/Users/allisongattone/web-wrangler/src/renderer/components/GlobalSettingsModal.tsx) describes those toggles as defaults for new apps.
+
+**Milestones**
+
+- Milestone 3.1: Keep schema defaults unchanged.
+- Milestone 3.2: Read global settings during install flow and override the new app settings row.
+- Milestone 3.3: Confirm the override is one-time only and never mutates existing apps.
+- Milestone 3.4: Restore accurate “default for new apps” copy in the UI.
+
+**Files/subsystems touched**
 
 - [src/main/index.ts](/Users/allisongattone/web-wrangler/src/main/index.ts)
 - [src/main/db.ts](/Users/allisongattone/web-wrangler/src/main/db.ts)
-- [src/shared/types.ts](/Users/allisongattone/web-wrangler/src/shared/types.ts)
 - [src/renderer/components/GlobalSettingsModal.tsx](/Users/allisongattone/web-wrangler/src/renderer/components/GlobalSettingsModal.tsx)
 - [docs/qa/acceptance-tests.md](/Users/allisongattone/web-wrangler/docs/qa/acceptance-tests.md)
 
-Implementation tasks:
+**Acceptance criteria**
 
-1. On `INSTALL_APP`, read global settings before or immediately after `insertApp`.
-2. Override the new app’s default `app_settings` row with:
-   - `blockAds = blockAdsGlobal`
-   - `darkMode = darkModeGlobal`
-3. Keep these as one-time defaults only.
-   They should not retroactively mutate existing app settings.
-4. Confirm the UI copy “Default for new apps” is now accurate.
+- Installing an app after changing global defaults creates app settings with those values.
+- Existing apps remain unchanged.
+- UI wording matches runtime behavior.
 
-Preferred implementation shape:
-
-- Keep schema defaults as stable fallback values
-- Apply global-derived overrides in install flow rather than changing DB schema defaults dynamically
-
-Acceptance criteria:
-
-- New app installs inherit current global defaults
-- Existing apps remain unchanged
-- Reinstalling or adding new apps after defaults change reflects the new defaults
-
-Risk:
-
-- Low
-
-Rollback:
-
-- Revert install-time override logic
-
-Validation:
+**Validation commands**
 
 ```bash
-npm run verify
+npm run lint
+npm run typecheck
+npm test
+npm run build
 ```
 
-Manual validation:
+**Rollback note**
 
-1. Enable global ad block and dark mode defaults.
-2. Install a new app.
-3. Confirm new app settings reflect those defaults.
-4. Confirm a previously installed app remains unchanged.
+Revert the install-flow override and UI copy changes.
 
-### Phase 3: Resolve Theme Drift
+**Dependencies on prior tasks**
 
-Goal:
+Task 1.
 
-- Either implement a real app theme switch or remove the control until the feature exists
+### Task 4: Renderer Theme Implementation
 
-Recommendation:
+**Goal**
 
-- Implement the minimal real feature rather than keep a dead control
+Make the stored global `theme` setting affect the dashboard UI.
 
-Target files:
+**Repo evidence**
 
-- [src/renderer/components/GlobalSettingsModal.tsx](/Users/allisongattone/web-wrangler/src/renderer/components/GlobalSettingsModal.tsx)
+- [src/shared/types.ts](/Users/allisongattone/web-wrangler/src/shared/types.ts) stores `theme`.
+- [src/renderer/components/GlobalSettingsModal.tsx](/Users/allisongattone/web-wrangler/src/renderer/components/GlobalSettingsModal.tsx) exposes theme controls.
+- [src/renderer/App.tsx](/Users/allisongattone/web-wrangler/src/renderer/App.tsx) loads global settings but never applies theme state.
+- [src/renderer/index.css](/Users/allisongattone/web-wrangler/src/renderer/index.css) has one active theme token set only.
+
+**Milestones**
+
+- Milestone 4.1: Apply theme via a root `data-theme` attribute.
+- Milestone 4.2: Bootstrap theme after global settings load.
+- Milestone 4.3: Add light and dark token values in CSS.
+- Milestone 4.4: Keep the settings control only because it now changes visible behavior.
+- Milestone 4.5: Validate persistence and `system` handling.
+
+**Files/subsystems touched**
+
 - [src/renderer/App.tsx](/Users/allisongattone/web-wrangler/src/renderer/App.tsx)
+- [src/renderer/components/GlobalSettingsModal.tsx](/Users/allisongattone/web-wrangler/src/renderer/components/GlobalSettingsModal.tsx)
 - [src/renderer/index.css](/Users/allisongattone/web-wrangler/src/renderer/index.css)
-- optionally [src/main/index.ts](/Users/allisongattone/web-wrangler/src/main/index.ts) if native theme integration is added
 
-Implementation tasks:
+**Acceptance criteria**
 
-1. Define a renderer theme application strategy:
-   - `data-theme` attribute on root element, or
-   - body/root CSS class
-2. Implement `system`, `light`, and `dark` behavior.
-3. If using `system`, either:
-   - rely on `prefers-color-scheme`, or
-   - expose native theme state from Electron if needed
-4. Ensure existing design tokens have both light and dark values.
-5. Persisted theme should apply on bootstrap before the user opens the settings modal.
+- Switching `theme` changes dashboard visuals.
+- Theme persists across restart.
+- `system` follows `prefers-color-scheme`.
 
-Acceptance criteria:
-
-- Changing theme changes visible renderer styling
-- Theme persists across restarts
-- `system` follows OS/browser color preference in a deterministic way
-
-Risk:
-
-- Medium
-
-Rollback:
-
-- Hide theme controls and treat theme as internal-only state
-
-Validation:
+**Validation commands**
 
 ```bash
 npm run verify
 ```
 
-Manual validation:
+**Rollback note**
 
-1. Switch among `system`, `light`, and `dark`.
-2. Restart the app.
-3. Confirm the selected theme still applies.
+Hide the theme control and revert renderer theme application changes.
 
-### Phase 4: Remove or Reframe Stored-Only Enforcement Controls
+**Dependencies on prior tasks**
 
-Goal:
+Task 1.
 
-- Stop shipping controls that imply security or OS enforcement the app does not provide
+### Task 5: Dormant Enforcement Controls Cleanup
 
-Target files:
+**Goal**
+
+Remove settings that imply runtime enforcement where no runtime enforcement exists.
+
+**Repo evidence**
+
+- [src/renderer/components/GlobalSettingsModal.tsx](/Users/allisongattone/web-wrangler/src/renderer/components/GlobalSettingsModal.tsx) shows app lock, PIN, and lock timeout.
+- [src/renderer/components/AppSettingsModal.tsx](/Users/allisongattone/web-wrangler/src/renderer/components/AppSettingsModal.tsx) shows notifications.
+- [src/main/index.ts](/Users/allisongattone/web-wrangler/src/main/index.ts) contains no matching enforcement path for these settings.
+
+**Milestones**
+
+- Milestone 5.1: Hide app lock, PIN, and lock timeout controls from global settings.
+- Milestone 5.2: Hide notifications and any open-at-login surface from per-app settings.
+- Milestone 5.3: Preserve storage fields for future work without treating them as shipped behavior.
+- Milestone 5.4: Update product docs so those features are explicitly deferred.
+
+**Files/subsystems touched**
 
 - [src/renderer/components/GlobalSettingsModal.tsx](/Users/allisongattone/web-wrangler/src/renderer/components/GlobalSettingsModal.tsx)
 - [src/renderer/components/AppSettingsModal.tsx](/Users/allisongattone/web-wrangler/src/renderer/components/AppSettingsModal.tsx)
-- [src/shared/types.ts](/Users/allisongattone/web-wrangler/src/shared/types.ts)
-- [docs/product/scope-and-non-goals.md](/Users/allisongattone/web-wrangler/docs/product/scope-and-non-goals.md)
 - [docs/product/prd.md](/Users/allisongattone/web-wrangler/docs/product/prd.md)
+- [docs/product/scope-and-non-goals.md](/Users/allisongattone/web-wrangler/docs/product/scope-and-non-goals.md)
+- [docs/product/onboarding-and-permission-flow.md](/Users/allisongattone/web-wrangler/docs/product/onboarding-and-permission-flow.md)
 
-Recommended action:
+**Acceptance criteria**
 
-- Remove or hide the following controls from the current UI:
-  - `Enable App Lock`
-  - `PIN`
-  - `Lock Timeout`
-  - `Notifications`
-- Leave persistence fields in types/DB only if they are intentionally reserved for future work
+- No visible control implies security, permission, or OS enforcement that the repo does not implement.
+- Deferred behavior is documented as deferred, not “partially shipped”.
 
-Optional interim alternative:
-
-- Keep controls visible, but label them `Not yet enforced`
-
-Why removal is preferred:
-
-- Security-adjacent UI that does nothing is worse than not having the feature
-- Notifications are especially misleading because users expect an allow/deny toggle to have real effect
-
-Acceptance criteria:
-
-- No setting in the shipped UI implies enforcement without a real code path behind it
-
-Risk:
-
-- Low
-
-Rollback:
-
-- Restore controls with explicit “not yet enforced” copy
-
-Validation:
+**Validation commands**
 
 ```bash
-npm run verify
+npm run lint
+npm run typecheck
+npm test
+npm run build
 ```
 
-### Phase 5: Decide the Fate of Open-at-Login
+**Rollback note**
 
-Goal:
+Restore the controls only if they are clearly labeled as non-shipping placeholders.
 
-- Either implement true OS login-item behavior or fully remove the dormant surface
+**Dependencies on prior tasks**
 
-Current recommendation:
+Task 1.
 
-- Defer implementation and remove references from active UI and docs now
+### Task 6: Dead Surface And IPC Cleanup
 
-If implemented later, target files likely include:
+**Goal**
 
-- [src/main/index.ts](/Users/allisongattone/web-wrangler/src/main/index.ts)
-- [src/main/db.ts](/Users/allisongattone/web-wrangler/src/main/db.ts)
-- [src/renderer/components/AppSettingsModal.tsx](/Users/allisongattone/web-wrangler/src/renderer/components/AppSettingsModal.tsx)
+Remove obviously dead IPC surface and document dormant internal-only APIs accurately.
 
-Implementation notes for future work:
+**Repo evidence**
 
-- Per-app open-at-login is a product decision, not just an Electron API call
-- The app currently restores prior open app/profile windows globally from Electron store
-- A future implementation must define:
-  - whether login launch opens the dashboard, last session, or app-specific windows
-  - whether this is global or per-app
-  - how macOS, Windows, and Linux behavior differ
+- [src/shared/types.ts](/Users/allisongattone/web-wrangler/src/shared/types.ts) still declares `SEARCH_CATALOG`.
+- [src/preload/index.ts](/Users/allisongattone/web-wrangler/src/preload/index.ts) and [src/main/index.ts](/Users/allisongattone/web-wrangler/src/main/index.ts) only use `LIST_CATALOG`.
+- `updateApp`, `updateProfile`, and `updateSpace` remain exposed but have no current renderer edit flow.
 
-Acceptance criteria if deferred:
+**Milestones**
 
-- No active UI suggests open-at-login is supported
-- Docs treat it as future work only
+- Milestone 6.1: Remove `SEARCH_CATALOG`.
+- Milestone 6.2: Confirm query-based `LIST_CATALOG` remains the supported flow.
+- Milestone 6.3: Treat dormant edit IPC as internal-ready surface, not shipped end-user editing.
 
-## Deferred High-Risk Work
-
-These items should not be patched opportunistically in the same branch as low-risk cleanup.
-
-### Deferred: App Lock
-
-Why deferred:
-
-- Requires security-sensitive UX and lifecycle design
-- Needs decisions about:
-  - when the lock is checked
-  - whether guest windows are blocked too
-  - whether lock applies after sleep/background/minimize
-  - how `runInBackground` interacts with lock state
-  - whether the PIN is stored plaintext, hashed, or in OS keychain
-
-Minimum acceptable future design:
-
-1. Replace plaintext PIN persistence with a safer storage model
-2. Add a real lock screen in renderer or a dedicated gated window
-3. Enforce lock on startup and after timeout
-4. Define behavior for guest windows while locked
-5. Add failure and recovery flow
-
-Recommendation:
-
-- Treat this as a separate milestone, not a patch cleanup item
-
-### Deferred: Notification Permission Enforcement
-
-Why deferred:
-
-- Requires explicit policy for website permissions
-- The app currently does not centralize `setPermissionRequestHandler`
-
-Minimum acceptable future design:
-
-1. Define policy for website notification requests
-2. Implement session-level permission mediation
-3. Decide whether the app setting acts as:
-   - hard deny
-   - allow list
-   - UI prompt suppression
-4. Update onboarding and trust docs
-
-Recommendation:
-
-- Remove or relabel the current UI control now
-- Implement later only with a permission policy document
-
-## API/Dead Surface Cleanup
-
-These are worthwhile cleanup tasks after user-facing drift is resolved.
-
-### Cleanup A: Remove or Use `SEARCH_CATALOG`
-
-Target:
-
-- [src/shared/types.ts](/Users/allisongattone/web-wrangler/src/shared/types.ts)
-
-Action:
-
-- Remove `SEARCH_CATALOG` if `LIST_CATALOG` with query object remains the supported path
-
-### Cleanup B: Review dormant edit IPC surfaces
-
-Targets:
+**Files/subsystems touched**
 
 - [src/shared/types.ts](/Users/allisongattone/web-wrangler/src/shared/types.ts)
 - [src/preload/index.ts](/Users/allisongattone/web-wrangler/src/preload/index.ts)
 - [src/main/index.ts](/Users/allisongattone/web-wrangler/src/main/index.ts)
+- [docs/engineering/implementation-gap-remediation-plan.md](/Users/allisongattone/web-wrangler/docs/engineering/implementation-gap-remediation-plan.md)
 
-Actions:
+**Acceptance criteria**
 
-- Keep `updateApp`, `updateProfile`, and `updateSpace` only if near-term UI work will use them
-- Otherwise document them as internal-ready but not currently surfaced
+- No dead catalog IPC constant remains.
+- Remaining dormant edit IPC is described as internal-only until a renderer flow exists.
 
-## Suggested GitHub Issue Breakdown
+**Validation commands**
 
-Create separate issues or PRs using this sequence:
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
 
-1. `docs/ui: remove misleading implementation claims`
-2. `main: wire Ghostery blocker into guest session runtime`
-3. `main/db: apply global defaults to new app settings`
-4. `renderer: implement actual dashboard theme switching`
-5. `renderer: remove stored-only enforcement controls`
-6. `cleanup: remove dead catalog IPC and review dormant edit APIs`
-7. `design: app lock architecture and secure PIN storage`
-8. `design: website permission mediation for notifications/camera/microphone`
+**Rollback note**
+
+Restore the removed constant only if a real caller is reintroduced.
+
+**Dependencies on prior tasks**
+
+None beyond repo inspection.
+
+### Task 7: Deferred Security Design Work
+
+**Goal**
+
+Capture future high-risk work without mixing it into low-risk remediation branches.
+
+**Repo evidence**
+
+- App lock values are persisted but not enforced.
+- Website permissions are not centrally mediated.
+
+**Milestones**
+
+- Milestone 7.1: Document app-lock design decisions needed before implementation.
+- Milestone 7.2: Document notification and website-permission mediation decisions needed before implementation.
+
+**Files/subsystems touched**
+
+- [docs/engineering/implementation-gap-remediation-plan.md](/Users/allisongattone/web-wrangler/docs/engineering/implementation-gap-remediation-plan.md)
+- future design docs under `docs/security` or `docs/product`
+
+**Acceptance criteria**
+
+- Deferred work is explicitly treated as future design work.
+- No high-risk security behavior is implemented opportunistically in the remediation branch.
+
+**Validation commands**
+
+No code validation required.
+
+**Rollback note**
+
+Not applicable unless future design docs are added incorrectly.
+
+**Dependencies on prior tasks**
+
+None.
 
 ## Suggested PR Slices
 
-Keep the PRs small and reversible.
-
-### PR 1
-
-- Docs/UI truth alignment only
-
-### PR 2
-
-- Ghostery wiring only
-
-### PR 3
-
-- Global defaults only
-
-### PR 4
-
-- Theme implementation or theme removal only
-
-### PR 5
-
-- Stored-only settings cleanup only
-
-## Test Plan Additions
-
-Add or update acceptance coverage in [docs/qa/acceptance-tests.md](/Users/allisongattone/web-wrangler/docs/qa/acceptance-tests.md) for:
-
-- Ghostery as active runtime ad blocker
-- global defaults applying only to newly installed apps
-- theme persistence and application
-- absence of misleading settings in shipped UI
-
-Add targeted automated coverage where feasible:
-
-- unit tests for install-time derivation of app defaults
-- unit tests for ad-blocker enable/disable decision logic
-- renderer tests for theme bootstrapping if the project later adds component test infrastructure
-
-## Risk Register
-
-| Area | Risk | Level | Mitigation |
-| --- | --- | --- | --- |
-| Ad blocker wiring | Ghostery changes site behavior or duplicates handlers | Medium | Add idempotent enable/disable flow and manual regression checks |
-| Theme implementation | Existing neon styling may not have light-theme token coverage | Medium | Start with a minimal two-token mode or hide feature until complete |
-| App lock | Security theater if partially implemented | High | Keep deferred; do not ship partial enforcement |
-| Notifications | Misleading permission semantics | High | Remove/relabel until real mediation exists |
-| Open at login | Platform divergence and unclear product behavior | Medium | Defer and de-scope from active UI |
-
-## Completion Definition
-
-This remediation effort is complete when all of the following are true:
-
-- No shipped UI control implies enforcement without a real implementation path
-- No top-level doc claims Ghostery if Ghostery is not the runtime blocker
-- New app installs honor global defaults if those controls remain visible
-- Theme either works end-to-end or is not exposed
-- Deferred features are clearly documented as deferred, not partially shipped
-- Dead API/IPC surfaces are either removed or documented as internal-only
-
-## Recommended First Milestone
-
-The highest-value first milestone is:
-
-1. remove misleading UI/docs claims
-2. wire Ghostery
-3. make global defaults actually apply to new installs
-
-That milestone closes the most visible trust gaps without taking on the security and lifecycle complexity of app lock or permission enforcement.
+1. `docs/ui: truth alignment and dormant control cleanup`
+2. `main: wire Ghostery into guest sessions with fallback`
+3. `main: apply global defaults during install flow`
+4. `renderer: apply persisted dashboard theme`
+5. `cleanup: remove dead catalog IPC constant and document dormant internal APIs`
+6. `design: app-lock and permission mediation follow-up specs`

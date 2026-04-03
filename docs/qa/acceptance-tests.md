@@ -182,9 +182,53 @@ Fail:
 
 - Setting persists but tray state does not reconcile.
 
+### AT-09 New App Inherits Current Global Defaults
+
+Requirement mapping:
+
+- PRD global settings and install-flow behavior
+
+Steps:
+
+1. Open Global Settings.
+2. Enable `Block Ads Globally` and `Dark Mode by Default`.
+3. Install a new app.
+4. Open the new app settings.
+
+Pass:
+
+- The new app has `blockAds` enabled.
+- The new app has `darkMode` enabled.
+- Previously installed apps remain unchanged.
+
+Fail:
+
+- New installs ignore the current global defaults, or existing apps are mutated retroactively.
+
+### AT-10 Guest App Blocking Uses Ghostery Path
+
+Requirement mapping:
+
+- PRD runtime blocking behavior
+
+Steps:
+
+1. Open a guest app window with `blockAds` enabled.
+2. Load a site with visible third-party trackers or ads.
+3. Disable `blockAds` while the app remains open.
+
+Pass:
+
+- Blocking is active with `blockAds` enabled.
+- Disabling `blockAds` removes the blocking behavior for the open guest window.
+
+Fail:
+
+- Guest windows still rely only on the old static filter path, or disabling the setting has no effect.
+
 ## Edge Case Tests
 
-### AT-09 Invalid URL Is Rejected
+### AT-11 Invalid URL Is Rejected
 
 Requirement mapping:
 
@@ -205,7 +249,7 @@ Fail:
 
 - Invalid app is persisted or no feedback is given.
 
-### AT-10 Deleting Non-Default Space Reassigns Apps
+### AT-12 Deleting Non-Default Space Reassigns Apps
 
 Requirement mapping:
 

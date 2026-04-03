@@ -77,13 +77,13 @@ export default function AppSettingsModal({ appId }: Props) {
             <div className="settings-section">
               <div className="setting-row">
                 <div>
-                  <div className="setting-label">Block Ads & Trackers</div>
-                  <div className="setting-desc">Uses EasyList filter lists</div>
-                </div>
-                <label className="toggle">
-                  <input type="checkbox" checked={settings.blockAds} onChange={(e) => patch('blockAds', e.target.checked)} />
-                  <div className="toggle-track" />
-                </label>
+              <div className="setting-label">Block Ads & Trackers</div>
+              <div className="setting-desc">Uses Ghostery filtering for guest app windows</div>
+            </div>
+            <label className="toggle">
+              <input type="checkbox" checked={settings.blockAds} onChange={(e) => patch('blockAds', e.target.checked)} />
+              <div className="toggle-track" />
+            </label>
               </div>
               <div className="sep" />
               <div className="setting-row">
@@ -93,17 +93,6 @@ export default function AppSettingsModal({ appId }: Props) {
                 </div>
                 <label className="toggle">
                   <input type="checkbox" checked={settings.darkMode} onChange={(e) => patch('darkMode', e.target.checked)} />
-                  <div className="toggle-track" />
-                </label>
-              </div>
-              <div className="sep" />
-              <div className="setting-row">
-                <div>
-                  <div className="setting-label">Notifications</div>
-                  <div className="setting-desc">Allow web notifications</div>
-                </div>
-                <label className="toggle">
-                  <input type="checkbox" checked={settings.notifications} onChange={(e) => patch('notifications', e.target.checked)} />
                   <div className="toggle-track" />
                 </label>
               </div>

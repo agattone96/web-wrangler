@@ -10,12 +10,33 @@ import GlobalSettingsModal from './components/GlobalSettingsModal'
 import ErrorBoundary from './components/ErrorBoundary'
 import './App.css'
 
+function resolveTheme(theme: 'system' | 'light' | 'dark'): 'light' | 'dark' {
+  if (theme !== 'system') return theme
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
 export default function App() {
   const {
     setApps, setSpaces, setGlobalSettings,
     showAddApp, showCatalog, showGlobalSettings, settingsTargetAppId,
     markAppOpen, markAppClosed,
   } = useStore()
+
+  useEffect(() => {
+    const applyTheme = (theme: 'system' | 'light' | 'dark') => {
+      document.documentElement.dataset.theme = resolveTheme(theme)
+    }
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleChange = () => {
+      const currentTheme = useStore.getState().globalSettings?.theme ?? 'system'
+      applyTheme(currentTheme)
+    }
+
+    handleChange()
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
 
   // ── Bootstrap: load all data from main process ──────────────
   useEffect(() => {
@@ -32,6 +53,7 @@ export default function App() {
         setApps(apps)
         setSpaces(spaces)
         setGlobalSettings(gs)
+        document.documentElement.dataset.theme = resolveTheme(gs.theme)
       } catch (err) {
         console.error('[Renderer] Bootstrap failed:', err);
       }

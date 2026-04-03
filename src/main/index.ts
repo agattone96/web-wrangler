@@ -14,7 +14,6 @@ import { openAppWindow, reloadAppSettings, getOpenWindows } from './window-manag
 import { fetchFavicon } from './app-icon-fetcher'
 import { IPC } from '../shared/types'
 import type { App, Profile, Space, InstallAppInput, CreateProfileInput, CreateSpaceInput, CatalogQuery } from '../shared/types'
-import { setupRequestFilter } from './request-filter'
 import storeRaw from './store'
 import { getMainWindowState, persistWindowBounds } from './window-state'
 import { getAppSettingsUpdateResult } from './app-settings-runtime'
@@ -285,6 +284,11 @@ function registerIpcHandlers(): void {
       createdAt: Date.now(),
     }
     insertApp(appEntry)
+    const globalSettings = getGlobalSettings()
+    updateAppSettings(id, {
+      blockAds: globalSettings.blockAdsGlobal,
+      darkMode: globalSettings.darkModeGlobal,
+    })
 
     // Auto-fetch favicon in background
     fetchFavicon(data.url, id).then((iconPath) => {
@@ -450,7 +454,6 @@ app.whenReady().then(() => {
   registerIpcHandlers()
   registerProtocol()
   setupCsp()
-  setupRequestFilter(session.defaultSession)
   createMenu()
   createMainWindow()
 

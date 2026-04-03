@@ -3,7 +3,7 @@ import path from 'path'
 import fs from 'fs'
 import { getAppSettings, getWindowState, saveWindowState } from './db'
 import { App, Profile, WindowState } from '../shared/types'
-import { setupRequestFilter } from './request-filter'
+import { disableAdblocker, setupAdblocker } from './adblocker'
 import { persistWindowBounds } from './window-state'
 
 // track open windows: key = `${appId}::${profileId}`
@@ -45,7 +45,7 @@ export async function openAppWindow(appEntry: App, profile: Profile, options: Op
 
     // Set up ad blocking for this session
     if (settings.blockAds) {
-      setupRequestFilter(sess)
+      await setupAdblocker(sess)
     }
 
     // Proxy
@@ -194,7 +194,9 @@ export async function reloadAppSettings(appId: string): Promise<void> {
 
       // 2. Ad blocking
       if (settings.blockAds) {
-        setupRequestFilter(win.webContents.session)
+        await setupAdblocker(win.webContents.session)
+      } else {
+        disableAdblocker(win.webContents.session)
       }
 
       // 3. Dark Mode
